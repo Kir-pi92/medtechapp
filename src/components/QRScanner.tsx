@@ -93,8 +93,8 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
 
             const kno = knoMatch[1];
 
-            // Use local proxy server to avoid CORS
-            const proxyUrl = `http://localhost:3001/api/device/${kno}`;
+            // Use relative path for proxy
+            const proxyUrl = `/api/device/${kno}`;
 
             const response = await fetch(proxyUrl);
             const result = await response.json();
