@@ -306,40 +306,118 @@ app.post('/api/settings', authMiddleware, (req, res) => {
 
 const { fetch, ProxyAgent } = require('undici');
 
+// Cache for proxies
+let proxyList = [];
+let lastProxyUpdate = 0;
+
+async function getTurkishProxies() {
+    // Refresh list every 10 minutes
+    if (proxyList.length > 0 && Date.now() - lastProxyUpdate < 10 * 60 * 1000) {
+        return proxyList;
+    }
+
+    console.log('🔄 Fetching new Turkish proxy list...');
+    const sources = [
+        'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+        'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=TR&ssl=all&anonymity=all',
+        'https://www.proxy-list.download/api/v1/get?type=http&country=TR'
+    ];
+
+    let proxies = [];
+    for (const source of sources) {
+        try {
+            const response = await fetch(source);
+            if (response.ok) {
+                const text = await response.text();
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                    const clean = line.trim();
+                    if (clean && clean.includes(':')) {
+                        proxies.push(`http://${clean}`);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error(`Failed to fetch proxies from ${source}:`, e.message);
+        }
+    }
+
+    // Shuffle proxies to load balance
+    proxies = proxies.sort(() => Math.random() - 0.5);
+    proxyList = [...new Set(proxies)]; // Remove duplicates
+    lastProxyUpdate = Date.now();
+    console.log(`✅ Found ${proxyList.length} potential Turkish proxies.`);
+    return proxyList;
+}
+
 app.get('/api/device/:kno', async (req, res) => {
     const { kno } = req.params;
+    const url = `https://sbu2.saglik.gov.tr/QR/QR.aspx?kno=${kno}`;
+
+    const headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+    };
 
     try {
-        const url = `https://sbu2.saglik.gov.tr/QR/QR.aspx?kno=${kno}`;
+        // Mode 1: Manual Proxy
+        if (process.env.QR_PROXY_URL && process.env.QR_PROXY_URL !== 'AUTO') {
+            const proxyAgent = new ProxyAgent(process.env.QR_PROXY_URL);
+            const response = await fetch(url, { headers, dispatcher: proxyAgent });
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            const html = await response.text();
+            const data = parseHtmlTable(html);
+            return res.json({ success: true, data, kno });
+        }
 
-        // Proxy configuration
-        const proxyUrl = process.env.QR_PROXY_URL;
-        const options = {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        // Mode 2: Auto Proxy (or fallback if direct failed and AUTO is enabled)
+        if (process.env.QR_PROXY_URL === 'AUTO') {
+            const proxies = await getTurkishProxies();
+
+            // Try up to 5 random proxies from the list
+            for (let i = 0; i < Math.min(proxies.length, 10); i++) {
+                const proxyUrl = proxies[i];
+                console.log(`Trying Proxy [${i + 1}/10]: ${proxyUrl}`);
+                try {
+                    const proxyAgent = new ProxyAgent(proxyUrl);
+                    // Short timeout for proxies
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 3000);
+
+                    const response = await fetch(url, {
+                        headers,
+                        dispatcher: proxyAgent,
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeout);
+
+                    if (response.ok) {
+                        const html = await response.text();
+                        // Basic check if we got a valid response, not a proxy blocked page
+                        if (html.includes('KİMLİK NO') || html.includes('TÜR')) {
+                            console.log(`✅ Success with proxy: ${proxyUrl}`);
+                            const data = parseHtmlTable(html);
+                            return res.json({ success: true, data, kno });
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next proxy
+                }
             }
-        };
-
-        if (proxyUrl) {
-            console.log('Using Proxy for QR request:', proxyUrl.replace(/:[^:@]*@/, ':***@')); // Log masked proxy
-            options.dispatcher = new ProxyAgent(proxyUrl);
+            throw new Error('All automatic proxies failed. Please try again or use a manual proxy.');
         }
 
-        const response = await fetch(url, options);
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
+        // Mode 3: Direct (Default)
+        const response = await fetch(url, { headers });
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
         const html = await response.text();
         const data = parseHtmlTable(html);
-
         res.json({ success: true, data, kno });
+
     } catch (error) {
         console.error('Error fetching device data:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, error: 'Veri çekilemedi: ' + error.message });
     }
 });
 
