@@ -528,10 +528,12 @@ app.get('/api/debug-network', async (req, res) => {
     const results = {
         scanUrl: 'https://sbu2.saglik.gov.tr/QR/QR.aspx',
         proxyConfigured: !!process.env.QR_PROXY_URL,
-        proxyUrlMasked: process.env.QR_PROXY_URL ? process.env.QR_PROXY_URL.replace(/:[^:@]*@/, ':***@') : null,
+        proxyUrlMasked: process.env.QR_PROXY_URL === 'AUTO' ? 'AUTO_MODE' : (process.env.QR_PROXY_URL ? process.env.QR_PROXY_URL.replace(/:[^:@]*@/, ':***@') : null),
         directIp: null,
         proxyIp: null,
         scanReachable: false,
+        autoProxySuccess: false,
+        usedProxy: null,
         error: null
     };
 
@@ -545,8 +547,8 @@ app.get('/api/debug-network', async (req, res) => {
             results.directIp = 'Failed: ' + e.message;
         }
 
-        // 2. Check Proxy IP (if configured)
-        if (process.env.QR_PROXY_URL) {
+        // 2. Check Proxy IP (Manual)
+        if (process.env.QR_PROXY_URL && process.env.QR_PROXY_URL !== 'AUTO') {
             try {
                 const proxyAgent = new ProxyAgent(process.env.QR_PROXY_URL);
                 const r2 = await fetch('https://api.ipify.org?format=json', { dispatcher: proxyAgent });
@@ -557,15 +559,56 @@ app.get('/api/debug-network', async (req, res) => {
             }
         }
 
-        // 3. Check Target Reachability (Head request)
+        // 3. Check Target Reachability
         try {
-            const opts = { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } };
-            if (process.env.QR_PROXY_URL) {
+            // Mode A: Manual Proxy
+            if (process.env.QR_PROXY_URL && process.env.QR_PROXY_URL !== 'AUTO') {
+                const opts = { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } };
                 opts.dispatcher = new ProxyAgent(process.env.QR_PROXY_URL);
+                const r3 = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', opts);
+                results.scanReachable = r3.ok || r3.status === 404 || r3.status === 302;
+                results.scanStatus = r3.status;
             }
-            const r3 = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', opts);
-            results.scanReachable = r3.ok || r3.status === 404 || r3.status === 302; // 404/302 means server replied
-            results.scanStatus = r3.status;
+            // Mode B: Auto Proxy
+            else if (process.env.QR_PROXY_URL === 'AUTO') {
+                const proxies = await getTurkishProxies();
+                results.totalProxiesFound = proxies.length;
+
+                for (let i = 0; i < Math.min(proxies.length, 5); i++) {
+                    const proxyUrl = proxies[i];
+                    try {
+                        const proxyAgent = new ProxyAgent(proxyUrl);
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 3000);
+
+                        const rAuto = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', {
+                            method: 'HEAD',
+                            headers: { 'User-Agent': 'Mozilla/5.0' },
+                            dispatcher: proxyAgent,
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeout);
+
+                        if (rAuto.ok || rAuto.status === 404 || rAuto.status === 302) {
+                            results.scanReachable = true;
+                            results.autoProxySuccess = true;
+                            results.usedProxy = proxyUrl;
+                            results.scanStatus = rAuto.status;
+                            break;
+                        }
+                    } catch (e) { continue; }
+                }
+                if (!results.autoProxySuccess) {
+                    results.error = "Auto proxy failed to find a working proxy in first 5 attempts.";
+                }
+            }
+            // Mode C: Direct
+            else {
+                const r3 = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } });
+                results.scanReachable = r3.ok || r3.status === 404 || r3.status === 302;
+                results.scanStatus = r3.status;
+            }
+
         } catch (e) {
             results.scanReachable = false;
             results.scanError = e.message;
