@@ -445,6 +445,60 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
     }
 });
 
+// Debug endpoint to check network and proxy
+app.get('/api/debug-network', async (req, res) => {
+    const results = {
+        scanUrl: 'https://sbu2.saglik.gov.tr/QR/QR.aspx',
+        proxyConfigured: !!process.env.QR_PROXY_URL,
+        proxyUrlMasked: process.env.QR_PROXY_URL ? process.env.QR_PROXY_URL.replace(/:[^:@]*@/, ':***@') : null,
+        directIp: null,
+        proxyIp: null,
+        scanReachable: false,
+        error: null
+    };
+
+    try {
+        // 1. Check Direct IP
+        try {
+            const r1 = await fetch('https://api.ipify.org?format=json');
+            const d1 = await r1.json();
+            results.directIp = d1.ip;
+        } catch (e) {
+            results.directIp = 'Failed: ' + e.message;
+        }
+
+        // 2. Check Proxy IP (if configured)
+        if (process.env.QR_PROXY_URL) {
+            try {
+                const proxyAgent = new ProxyAgent(process.env.QR_PROXY_URL);
+                const r2 = await fetch('https://api.ipify.org?format=json', { dispatcher: proxyAgent });
+                const d2 = await r2.json();
+                results.proxyIp = d2.ip;
+            } catch (e) {
+                results.proxyIp = 'Failed: ' + e.message;
+            }
+        }
+
+        // 3. Check Target Reachability (Head request)
+        try {
+            const opts = { method: 'HEAD', headers: { 'User-Agent': 'Mozilla/5.0' } };
+            if (process.env.QR_PROXY_URL) {
+                opts.dispatcher = new ProxyAgent(process.env.QR_PROXY_URL);
+            }
+            const r3 = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', opts);
+            results.scanReachable = r3.ok || r3.status === 404 || r3.status === 302; // 404/302 means server replied
+            results.scanStatus = r3.status;
+        } catch (e) {
+            results.scanReachable = false;
+            results.scanError = e.message;
+        }
+
+        res.json(results);
+    } catch (error) {
+        res.status(500).json({ error: error.message, results });
+    }
+});
+
 // ============== STATIC FILES (for production) ==============
 app.use(express.static(path.join(__dirname, 'dist')));
 
