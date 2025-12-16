@@ -304,18 +304,30 @@ app.post('/api/settings', authMiddleware, (req, res) => {
 
 // ============== QR PROXY (from original proxy-server) ==============
 
+const { fetch, ProxyAgent } = require('undici');
+
 app.get('/api/device/:kno', async (req, res) => {
     const { kno } = req.params;
 
     try {
         const url = `https://sbu2.saglik.gov.tr/QR/QR.aspx?kno=${kno}`;
-        const response = await fetch(url, {
+
+        // Proxy configuration
+        const proxyUrl = process.env.QR_PROXY_URL;
+        const options = {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
             }
-        });
+        };
+
+        if (proxyUrl) {
+            console.log('Using Proxy for QR request:', proxyUrl.replace(/:[^:@]*@/, ':***@')); // Log masked proxy
+            options.dispatcher = new ProxyAgent(proxyUrl);
+        }
+
+        const response = await fetch(url, options);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
