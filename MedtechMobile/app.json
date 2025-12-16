@@ -1,0 +1,46 @@
+{
+    "expo": {
+        "name": "MedTech Service",
+        "slug": "medtech-mobile",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "automatic",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#0ea5e9"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.medtech.service"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#0ea5e9"
+            },
+            "package": "com.medtech.service",
+            "permissions": [
+                "android.permission.CAMERA"
+            ]
+        },
+        "plugins": [
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow MedTech Service to access your camera for QR code scanning."
+                }
+            ],
+            [
+                "expo-image-picker",
+                {
+                    "photosPermission": "Allow MedTech Service to access your photos."
+                }
+            ]
+        ]
+    }
+}

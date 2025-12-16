@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+/* Paper texture background for print/PDF */
+@media print {
+  body {
+    background-color: #faf8f5 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #printable-report {
+    background:
+      /* Noise texture overlay */
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
+      /* Subtle paper grain */
+      linear-gradient(180deg, rgba(250, 248, 245, 0.8) 0%, rgba(245, 241, 235, 0.9) 100%) !important;
+    background-color: #faf8f5 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    position: relative;
+  }
+
+  #printable-report::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      repeating-linear-gradient(0deg,
+        transparent,
+        transparent 2px,
+        rgba(139, 119, 101, 0.015) 2px,
+        rgba(139, 119, 101, 0.015) 4px),
+      repeating-linear-gradient(90deg,
+        transparent,
+        transparent 2px,
+        rgba(139, 119, 101, 0.01) 2px,
+        rgba(139, 119, 101, 0.01) 4px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #printable-report>* {
+    position: relative;
+    z-index: 1;
+  }
+}
