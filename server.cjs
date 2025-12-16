@@ -311,20 +311,31 @@ let proxyList = [];
 let lastProxyUpdate = 0;
 
 async function getTurkishProxies() {
-    // Refresh list every 10 minutes
+    // Force refresh if list is empty or old
     if (proxyList.length > 0 && Date.now() - lastProxyUpdate < 10 * 60 * 1000) {
         return proxyList;
     }
 
     console.log('🔄 Fetching new Turkish proxy list...');
     const sources = [
-        'https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt',
+        // Only use strict Turkey lists
         'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=TR&ssl=all&anonymity=all',
-        'https://www.proxy-list.download/api/v1/get?type=http&country=TR'
+        'https://www.proxy-list.download/api/v1/get?type=http&country=TR',
+        'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt' // This is global too, checking others
+    ];
+    // Actually, monosans is global. Let's stick to API based ones or filter.
+    // Better list:
+    const strictSources = [
+        'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=TR&ssl=all&anonymity=all',
+        'https://www.proxy-list.download/api/v1/get?type=http&country=TR',
+        // spys.one is hard to scrape.
+        // Let's use a smaller set but ensure quality.
     ];
 
+    // Reset list
     let proxies = [];
-    for (const source of sources) {
+
+    for (const source of strictSources) {
         try {
             const response = await fetch(source);
             if (response.ok) {
@@ -571,15 +582,21 @@ app.get('/api/debug-network', async (req, res) => {
             }
             // Mode B: Auto Proxy
             else if (process.env.QR_PROXY_URL === 'AUTO') {
+                // Force refresh list for debug
+                proxyList = [];
                 const proxies = await getTurkishProxies();
                 results.totalProxiesFound = proxies.length;
 
-                for (let i = 0; i < Math.min(proxies.length, 5); i++) {
+                // Try up to 20 random proxies
+                const attempts = Math.min(proxies.length, 20);
+
+                for (let i = 0; i < attempts; i++) {
                     const proxyUrl = proxies[i];
                     try {
                         const proxyAgent = new ProxyAgent(proxyUrl);
                         const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 3000);
+                        // 2 second timeout for faster scanning
+                        const timeout = setTimeout(() => controller.abort(), 2000);
 
                         const rAuto = await fetch('https://sbu2.saglik.gov.tr/QR/QR.aspx', {
                             method: 'HEAD',
@@ -599,7 +616,7 @@ app.get('/api/debug-network', async (req, res) => {
                     } catch (e) { continue; }
                 }
                 if (!results.autoProxySuccess) {
-                    results.error = "Auto proxy failed to find a working proxy in first 5 attempts.";
+                    results.error = `Auto proxy failed to find a working proxy in first ${attempts} attempts (out of ${results.totalProxiesFound}).`;
                 }
             }
             // Mode C: Direct
