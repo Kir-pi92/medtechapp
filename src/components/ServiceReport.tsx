@@ -1,5 +1,5 @@
 import type { ServiceReport as ServiceReportType } from '../types';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Printer, ArrowLeft, Download, CheckCircle2, AlertCircle, Clock, XCircle, Pencil, Mail } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { useTemplate, type ReportSection } from '../TemplateContext';
@@ -380,7 +380,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
     // Group sections for grid display based on width
     const renderSectionsWithGrid = () => {
         const visibleSections = getVisibleSections();
-        const result: JSX.Element[] = [];
+        const result: React.ReactNode[] = [];
         let i = 0;
 
         while (i < visibleSections.length) {

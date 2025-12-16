@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     GripVertical, Eye, EyeOff, ArrowLeft, Save, RotateCcw, Move,
     Download, Printer, Plus, Copy, Trash2, Check, Palette,
-    Minimize2, Square, Maximize2, FileText, Columns, RectangleHorizontal,
+    Minimize2, Square, Maximize2, Columns, RectangleHorizontal,
     ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
@@ -248,7 +248,7 @@ export function TemplateEditor({ onBack }: TemplateEditorProps) {
 
     // Render sections with proper grid layout
     const renderPreviewSections = () => {
-        const result: JSX.Element[] = [];
+        const result: React.ReactNode[] = [];
         let i = 0;
 
         while (i < template.sections.length) {
