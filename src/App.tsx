@@ -52,11 +52,14 @@ function App() {
         setReports(data);
 
         // Check backup reminder
+        // Check backup reminder (Disabled temporarily to fix UI blocking issue)
+        /*
         const lastBackupReminder = localStorage.getItem('medtech_lastBackupReminder');
         const oneWeek = 7 * 24 * 60 * 60 * 1000;
         if ((!lastBackupReminder || Date.now() - parseInt(lastBackupReminder) > oneWeek) && data.length > 0) {
           setShowBackupReminder(true);
         }
+        */
       } catch (error) {
         console.error('Failed to load reports:', error);
       } finally {
