@@ -1,10 +1,11 @@
 import type { ServiceReport as ServiceReportType } from '../types';
 import React, { useState } from 'react';
-import { Printer, ArrowLeft, Download, CheckCircle2, AlertCircle, Clock, XCircle, Pencil, Mail } from 'lucide-react';
+import { Printer, ArrowLeft, Download, CheckCircle2, AlertCircle, Clock, XCircle, Pencil, Mail, Link as LinkIcon, Check } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { useTemplate, type ReportSection } from '../TemplateContext';
 import { statusTranslationMap } from '../i18n';
 import { EmailModal } from './EmailModal';
+import { reportsApi } from '../api';
 
 interface ServiceReportProps {
     data: ServiceReportType;
@@ -16,9 +17,28 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
     const { t } = useLanguage();
     const { template } = useTemplate();
     const [showEmailModal, setShowEmailModal] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [generatingLink, setGeneratingLink] = useState(false);
 
     const handlePrint = () => {
         window.print();
+    };
+
+    const handleGenerateLink = async () => {
+        if (!data.id) return;
+        setGeneratingLink(true);
+        try {
+            const { url } = await reportsApi.generateSignLink(data.id);
+            const fullUrl = `${window.location.origin}${url}`;
+            navigator.clipboard.writeText(fullUrl);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to generate link:', error);
+            alert('Failed to generate link');
+        } finally {
+            setGeneratingLink(false);
+        }
     };
 
     const getStatusTranslation = (status: string) => {
@@ -71,34 +91,34 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
         <div className="mb-8">
             {/* Top banner */}
             <div
-                className="rounded-t-lg px-6 py-4 flex items-center justify-between"
+                className="rounded-t-lg px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4"
                 style={{ backgroundColor: template.primaryColor }}
             >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 w-full md:w-auto">
                     {template.companyLogo ? (
-                        <div className="bg-white rounded-lg p-2 shadow-sm">
-                            <img src={template.companyLogo} alt="Logo" className="w-14 h-14 object-contain" />
+                        <div className="bg-white rounded-lg p-2 shadow-sm flex-shrink-0">
+                            <img src={template.companyLogo} alt="Logo" className="w-12 h-12 md:w-14 md:h-14 object-contain" />
                         </div>
                     ) : (
-                        <div className="bg-white/20 rounded-lg p-2 w-16 h-16 flex items-center justify-center">
+                        <div className="bg-white/20 rounded-lg p-2 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center flex-shrink-0">
                             <span className="text-white/70 text-xs font-medium">LOGO</span>
                         </div>
                     )}
                     <div>
-                        <h1 className="text-2xl font-bold text-white uppercase tracking-wide" style={{ fontFamily: template.fontFamily }}>
+                        <h1 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wide" style={{ fontFamily: template.fontFamily }}>
                             {template.companyName || 'MedTech Service'}
                         </h1>
                         <p className="text-white/80 text-sm">{t('technicalServiceReport')}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
                     {/* TSE-HYB Logo and Number */}
                     <div className="flex flex-col items-center">
                         <div className="bg-white rounded-lg p-1.5 shadow-sm">
                             <img
                                 src="/tse-hyb-logo.jpg"
                                 alt="TSE HYB"
-                                className="h-12 w-auto object-contain"
+                                className="h-10 md:h-12 w-auto object-contain"
                             />
                         </div>
                         <span className="text-white/90 text-xs font-medium mt-1">26-HYB-2438</span>
@@ -112,8 +132,8 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
             </div>
 
             {/* Date and status bar */}
-            <div className="bg-slate-50 border-x border-b border-slate-200 rounded-b-lg px-6 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-6">
+            <div className="bg-slate-50 border-x border-b border-slate-200 rounded-b-lg px-4 md:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 w-full sm:w-auto">
                     <div>
                         <span className="text-slate-500 text-sm">{t('reportDate')}:</span>
                         <span className="ml-2 font-semibold text-slate-900">{data.serviceDate}</span>
@@ -123,7 +143,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                         <span className="ml-2 font-semibold text-slate-900">{data.technicianName}</span>
                     </div>
                 </div>
-                <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${getStatusColor(data.status).bg} ${getStatusColor(data.status).border}`}>
+                <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border w-full sm:w-auto justify-center ${getStatusColor(data.status).bg} ${getStatusColor(data.status).border}`}>
                     {getStatusIcon(data.status)}
                     <span className={`font-semibold text-sm ${getStatusColor(data.status).text}`}>
                         {getStatusTranslation(data.status)}
@@ -287,7 +307,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                 </h3>
             </div>
             <div className="p-6">
-                <div className="grid grid-cols-2 gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div>
                         <div className="text-sm text-slate-500 mb-2">{t('technicianSignature')}</div>
                         <div className="font-semibold text-slate-900 mb-4">{data.technicianName}</div>
@@ -425,37 +445,45 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
     return (
         <div className="max-w-4xl mx-auto">
             {/* No-Print Controls */}
-            <div className="mb-6 flex justify-between items-center print:hidden">
+            <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
                 <button
                     onClick={onBack}
                     className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors px-4 py-2 rounded-lg hover:bg-slate-100"
                 >
                     <ArrowLeft className="w-4 h-4" /> {t('backToEdit')}
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     {onEdit && (
                         <button
                             onClick={onEdit}
-                            className="flex items-center gap-2 px-4 py-2.5 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all border border-blue-200"
+                            className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-all border border-blue-200 text-sm"
                         >
-                            <Pencil className="w-4 h-4" /> {t('editReport')}
+                            <Pencil className="w-4 h-4" /> <span className="hidden sm:inline">{t('editReport')}</span>
                         </button>
                     )}
                     <button
+                        onClick={handleGenerateLink}
+                        disabled={generatingLink}
+                        className="flex items-center gap-2 px-3 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-all border border-purple-200 text-sm"
+                    >
+                        {linkCopied ? <Check className="w-4 h-4" /> : <LinkIcon className="w-4 h-4" />}
+                        {linkCopied ? t('linkCopied') : t('signatureLink')}
+                    </button>
+                    <button
                         onClick={() => setShowEmailModal(true)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-green-600 hover:bg-green-50 rounded-lg font-medium transition-all border border-green-200"
+                        className="flex items-center gap-2 px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium transition-all border border-green-200 text-sm"
                     >
-                        <Mail className="w-4 h-4" /> E-posta Gönder
+                        <Mail className="w-4 h-4" /> <span className="hidden sm:inline">E-posta</span>
                     </button>
                     <button
                         onClick={handlePrint}
-                        className="flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-all border border-slate-200"
+                        className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-all border border-slate-200 text-sm"
                     >
-                        <Download className="w-4 h-4" /> {t('downloadPdf')}
+                        <Download className="w-4 h-4" /> <span className="hidden sm:inline">{t('downloadPdf')}</span>
                     </button>
                     <button
                         onClick={handlePrint}
-                        className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg font-semibold shadow-lg transition-all hover:shadow-xl"
+                        className="flex items-center gap-2 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition-all hover:shadow-xl text-sm"
                         style={{ backgroundColor: template.primaryColor }}
                     >
                         <Printer className="w-4 h-4" /> {t('printReport')}
@@ -474,7 +502,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
 
             {/* Printable Area */}
             <div
-                className="bg-slate-50 p-8 rounded-2xl print:bg-white print:p-0"
+                className="bg-slate-50 p-4 md:p-8 rounded-2xl print:bg-white print:p-0"
                 id="printable-report"
                 style={{ fontFamily: template.fontFamily }}
             >

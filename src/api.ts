@@ -107,6 +107,27 @@ export const reportsApi = {
             method: 'DELETE',
         });
     },
+
+    generateSignLink: async (id: string): Promise<{ token: string; url: string }> => {
+        return apiRequest(`/api/reports/${id}/sign-link`, {
+            method: 'POST',
+        });
+    },
+};
+
+// ============== PUBLIC ENDPOINTS ==============
+
+export const publicApi = {
+    getReport: async (token: string): Promise<any> => {
+        return apiRequest(`/api/public/reports/${token}`);
+    },
+
+    signReport: async (token: string, data: { signature: string; signerName: string }): Promise<void> => {
+        return apiRequest(`/api/public/reports/${token}/sign`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
 };
 
 // ============== SETTINGS ==============

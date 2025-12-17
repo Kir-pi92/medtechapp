@@ -149,6 +149,17 @@ export const translations = {
         backToEdit: 'Back to Edit',
         printReport: 'Print Report',
 
+        // Public Signature
+        signatureLink: 'Signature Link',
+        generateLink: 'Generate Link',
+        copyLink: 'Copy',
+        linkCopied: 'Link Copied',
+        linkGenerated: 'Link generated successfully',
+        signReportPublic: 'Sign Report',
+        publicSignDescription: 'Please review the service details and sign below.',
+        thankYouSigning: 'Thank you for signing',
+        signatureSaved: 'Signature saved successfully',
+
         // Device Types - Görüntüleme
         xray: 'X-Ray',
         ctScanner: 'CT Scanner',
@@ -411,7 +422,7 @@ export const translations = {
         date: 'Tarih',
         customer: 'Müşteri',
         device: 'Cihaz',
-        technician: 'Teknisyen',
+        technician: 'Teknik Servis Mühendisi',
         status: 'Durum',
         actions: 'İşlemler',
 
@@ -456,8 +467,8 @@ export const translations = {
         scrapped: 'Hurdaya Ayrıldı (BER)',
 
         // Final Details
-        technicianName: 'Teknisyen Adı',
-        technicianLabel: 'Teknisyen',
+        technicianName: 'Teknik Servis Mühendisi Adı',
+        technicianLabel: 'Teknik Servis Mühendisi',
         dateLabel: 'Tarih',
         generateReport: 'Rapor Oluştur',
 
@@ -476,7 +487,7 @@ export const translations = {
         serialNo: 'Seri No:',
         tagNo: 'Künye No:',
         productionYearLabel: 'Üretim Yılı:',
-        technicianSignature: 'Teknisyen İmzası',
+        technicianSignature: 'Teknik Servis Mühendisi İmzası',
         customerSignature: 'Müşteri İmzası',
         authorizedPersonnel: 'Yetkili Personel',
         signHere: 'Buraya imza atınız',
@@ -484,6 +495,17 @@ export const translations = {
         documentCertification: 'Bu belge, yukarıda açıklanan servisin gerçekleştirildiğini onaylar.',
         backToEdit: 'Düzenlemeye Dön',
         printReport: 'Raporu Yazdır',
+
+        // Public Signature
+        signatureLink: 'İmza Linki',
+        generateLink: 'Link Oluştur',
+        copyLink: 'Kopyala',
+        linkCopied: 'Link Kopyalandı',
+        linkGenerated: 'Link başarıyla oluşturuldu',
+        signReportPublic: 'Raporu İmzala',
+        publicSignDescription: 'Lütfen servis detaylarını inceleyip aşağıdan imzalayınız.',
+        thankYouSigning: 'İmzaladığınız için teşekkürler',
+        signatureSaved: 'İmzanız başarıyla kaydedildi',
 
         // Device Types - Görüntüleme
         xray: 'Röntgen',
@@ -592,86 +614,6 @@ export const translations = {
         examinationLight: 'Muayene Lambası',
         operatingTable: 'Ameliyat Masası',
         other: 'Diğer',
-
-        // Settings
-        settingsTitle: 'Ayarlar',
-        settingsDescription: 'Uygulama tercihlerini yapılandırın.',
-        languageSettings: 'Dil Ayarları',
-        selectLanguage: 'Dil Seçin',
-        english: 'English',
-        turkish: 'Türkçe',
-        settingsSaved: 'Ayarlar otomatik olarak kaydedilir.',
-
-        // Template Editor
-        templateEditor: 'Rapor Şablonu',
-        templateEditorDescription: 'Bölümleri sürükleyerek rapor düzenini özelleştirin.',
-        dragToReorder: 'Bölümleri sıralamak için sürükleyin',
-        resetTemplate: 'Varsayılana Sıfırla',
-        sectionHeader: 'Başlık',
-        sectionCustomerInfo: 'Müşteri Bilgileri',
-        sectionDeviceInfo: 'Cihaz Bilgileri',
-        sectionFaultDescription: 'Arıza Açıklaması',
-        sectionActionTaken: 'Yapılan İşlem',
-        sectionPartsUsed: 'Kullanılan Parçalar',
-        sectionSignatures: 'İmzalar',
-        visible: 'Görünür',
-        hidden: 'Gizli',
-
-        // Company Settings
-        companySettings: 'Şirket Ayarları',
-        companyLogo: 'Şirket Logosu',
-        uploadLogo: 'Logo Yükle',
-        removeLogo: 'Logoyu Kaldır',
-        companyName: 'Şirket Adı',
-        logoPreview: 'Logo Önizleme',
-        noLogoUploaded: 'Logo yüklenmedi',
-
-        // Multiple Templates
-        savedTemplates: 'Kayıtlı Şablonlar',
-        newTemplate: 'Yeni Şablon',
-        templateName: 'Şablon Adı',
-        saveAsNew: 'Yeni Olarak Kaydet',
-        duplicate: 'Kopyala',
-        deleteTemplate: 'Sil',
-        confirmDeleteTemplate: 'Bu şablonu silmek istediğinizden emin misiniz?',
-        defaultTemplate: 'Varsayılan Şablon',
-        activeTemplate: 'Aktif',
-
-        // Section Sizing
-        sectionSize: 'Bölüm Boyutu',
-        compact: 'Kompakt',
-        normal: 'Normal',
-        large: 'Geniş',
-
-        // Section Width
-        sectionWidth: 'Bölüm Genişliği',
-        fullWidth: 'Tam Genişlik',
-        halfWidth: 'Yarım Genişlik',
-
-        // Design Options
-        designSettings: 'Tasarım Ayarları',
-        primaryColor: 'Ana Renk',
-        fontFamily: 'Yazı Tipi',
-        showGridLines: 'Izgara Çizgilerini Göster',
-        paperSize: 'Kağıt Boyutu',
-        a4: 'A4',
-        letter: 'Letter',
-
-        // PDF Export
-        exportPdf: 'PDF Olarak Dışa Aktar',
-        downloadPdf: 'PDF İndir',
-        exporting: 'Dışa Aktarılıyor...',
-
-        // Validation messages
-        deviceTypeRequired: 'Cihaz türü gereklidir',
-        brandRequired: 'Marka gereklidir',
-        modelRequired: 'Model gereklidir',
-        serialNumberRequired: 'Seri numarası gereklidir',
-        customerNameRequired: 'Müşteri/Hastane adı gereklidir',
-        faultDescriptionRequired: 'Lütfen detaylı bir arıza açıklaması girin',
-        actionTakenRequired: 'Lütfen yapılan işlemi açıklayın',
-        technicianNameRequired: 'Teknisyen adı gereklidir',
-        dateRequired: 'Tarih gereklidir',
     },
 } as const;
 

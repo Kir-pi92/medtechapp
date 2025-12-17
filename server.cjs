@@ -55,6 +55,7 @@ db.exec(`
     notes TEXT,
     technicianSignature TEXT,
     customerSignature TEXT,
+    signatureToken TEXT,
     photos TEXT,
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -87,6 +88,10 @@ try {
 try {
     db.exec(`ALTER TABLE reports ADD COLUMN photos TEXT;`);
 } catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE reports ADD COLUMN signatureToken TEXT;`);
+} catch (e) { /* Column already exists */ }
+
 
 // Create default admin user if not exists
 const adminExists = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
@@ -270,6 +275,61 @@ app.delete('/api/reports/:id', authMiddleware, (req, res) => {
     }
     res.json({ success: true });
 });
+
+// Generate signature link
+app.post('/api/reports/:id/sign-link', authMiddleware, (req, res) => {
+    const existing = db.prepare('SELECT id, signatureToken FROM reports WHERE id = ? AND userId = ?').get(req.params.id, req.user.id);
+    if (!existing) {
+        return res.status(404).json({ error: 'Report not found' });
+    }
+
+    let token = existing.signatureToken;
+    if (!token) {
+        token = uuidv4();
+        db.prepare('UPDATE reports SET signatureToken = ? WHERE id = ?').run(token, req.params.id);
+    }
+
+    res.json({ token, url: `/sign/${token}` });
+});
+
+// ============== PUBLIC ENDPOINTS (No Auth Required) ==============
+
+// Get public report info (limited fields)
+app.get('/api/public/reports/:token', (req, res) => {
+    const report = db.prepare('SELECT id, customerName, contactPerson, deviceType, brand, model, serialNumber, faultDescription, actionTaken, status, technicianName, serviceDate FROM reports WHERE signatureToken = ?').get(req.params.token);
+    
+    if (!report) {
+        return res.status(404).json({ error: 'Invalid link' });
+    }
+    
+    // Don't expose sensitive info, only what's needed for signing
+    res.json(report);
+});
+
+// Submit public signature
+app.post('/api/public/reports/:token/sign', (req, res) => {
+    const { signature, signerName } = req.body;
+    
+    if (!signature) {
+        return res.status(400).json({ error: 'Signature is required' });
+    }
+
+    const report = db.prepare('SELECT id FROM reports WHERE signatureToken = ?').get(req.params.token);
+    if (!report) {
+        return res.status(404).json({ error: 'Invalid link' });
+    }
+
+    db.prepare(`
+        UPDATE reports 
+        SET customerSignature = ?, 
+            contactPerson = CASE WHEN contactPerson IS NULL OR contactPerson = '' THEN ? ELSE contactPerson END,
+            updatedAt = CURRENT_TIMESTAMP 
+        WHERE id = ?
+    `).run(signature, signerName || null, report.id);
+
+    res.json({ success: true });
+});
+
 
 // ============== SETTINGS ENDPOINTS ==============
 

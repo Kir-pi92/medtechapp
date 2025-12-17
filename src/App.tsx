@@ -6,6 +6,7 @@ import { Settings } from './components/Settings';
 import { TemplateEditor } from './components/TemplateEditor';
 import { CompanyLogo } from './components/CompanyLogo';
 import { LoginPage } from './components/LoginPage';
+import { PublicReportSign } from './components/PublicReportSign';
 import { useLanguage } from './LanguageContext';
 import { useAuth } from './AuthContext';
 import { reportsApi } from './api';
@@ -16,7 +17,7 @@ import { saveAs } from 'file-saver';
 
 function App() {
   const { user, isLoading: authLoading, isAuthenticated, logout } = useAuth();
-  const [view, setView] = useState<'dashboard' | 'new' | 'edit' | 'report' | 'settings' | 'template'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'new' | 'edit' | 'report' | 'settings' | 'template' | 'public_sign'>('dashboard');
   const [currentReport, setCurrentReport] = useState<ServiceReportType | null>(null);
   const [editingReport, setEditingReport] = useState<ServiceReportType | null>(null);
   const [reports, setReports] = useState<ServiceReportType[]>([]);
@@ -27,11 +28,22 @@ function App() {
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [signToken, setSignToken] = useState<string | null>(null);
   const { t } = useLanguage();
+
+  // Check for public sign link on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/^\/sign\/([a-zA-Z0-9-]+)/);
+    if (match && match[1]) {
+      setSignToken(match[1]);
+      setView('public_sign');
+    }
+  }, []);
 
   // Load reports from API when authenticated
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || view === 'public_sign') return;
 
     const loadReports = async () => {
       setIsLoadingReports(true);
@@ -53,7 +65,7 @@ function App() {
     };
 
     loadReports();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, view]);
 
   // Export to Excel function
   const exportToExcel = () => {
@@ -168,6 +180,11 @@ function App() {
     }
     setIsMobileMenuOpen(false);
   };
+
+  // Check valid public sign view
+  if (view === 'public_sign' && signToken) {
+    return <PublicReportSign token={signToken} />;
+  }
 
   // Show loading while checking auth
   if (authLoading) {
