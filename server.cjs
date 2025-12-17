@@ -602,6 +602,58 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
     }
 });
 
+// Debug endpoint to check/fix DB schema
+app.get('/api/debug/db-check', (req, res) => {
+    const results = {
+        tableExists: false,
+        columns: [],
+        migrationAttempts: [],
+        error: null
+    };
+
+    try {
+        // Check if table exists
+        const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='reports'").get();
+        results.tableExists = !!tableCheck;
+
+        if (results.tableExists) {
+            // Get current columns
+            results.columns = db.prepare("PRAGMA table_info(reports)").all();
+
+            // Try to force add columns and log result
+            const columnsToAdd = [
+                { name: 'signatureToken', type: 'TEXT' },
+                { name: 'technicianSignature', type: 'TEXT' },
+                { name: 'customerSignature', type: 'TEXT' },
+                { name: 'productionYear', type: 'TEXT' },
+                { name: 'customerEmail', type: 'TEXT' },
+                { name: 'photos', type: 'TEXT' }
+            ];
+
+            columnsToAdd.forEach(col => {
+                const exists = results.columns.some(c => c.name === col.name);
+                if (!exists) {
+                    try {
+                        db.exec(`ALTER TABLE reports ADD COLUMN ${col.name} ${col.type}`);
+                        results.migrationAttempts.push(`Added ${col.name}: SUCCESS`);
+                    } catch (e) {
+                        results.migrationAttempts.push(`Add ${col.name}: FAILED - ${e.message}`);
+                    }
+                } else {
+                    results.migrationAttempts.push(`Add ${col.name}: SKIPPED (Exists)`);
+                }
+            });
+
+            // Re-fetch columns to show final state
+            results.finalColumns = db.prepare("PRAGMA table_info(reports)").all();
+        }
+    } catch (e) {
+        results.error = e.message;
+    }
+
+    res.json(results);
+});
+
 // Debug endpoint to check network and proxy
 app.get('/api/debug-network', async (req, res) => {
     const results = {

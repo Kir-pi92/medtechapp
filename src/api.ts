@@ -34,8 +34,14 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(error.error || 'Request failed');
+        let errorMessage = 'Request failed';
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+            errorMessage = `HTTP Error ${response.status}`;
+        }
+        throw new Error(errorMessage);
     }
 
     return response.json();

@@ -33,9 +33,10 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
             navigator.clipboard.writeText(fullUrl);
             setLinkCopied(true);
             setTimeout(() => setLinkCopied(false), 2000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to generate link:', error);
-            alert('Failed to generate link');
+            const errorMessage = error.message || 'Unknown error';
+            alert(`Link oluşturulamadı: ${errorMessage}\n\nLütfen /api/debug/db-check adresini kontrol edin.`);
         } finally {
             setGeneratingLink(false);
         }
