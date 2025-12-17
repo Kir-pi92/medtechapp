@@ -73,24 +73,27 @@ db.exec(`
 `);
 
 // Add new columns if they don't exist (for existing databases)
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN productionYear TEXT;`);
-} catch (e) { /* Column already exists */ }
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN customerEmail TEXT;`);
-} catch (e) { /* Column already exists */ }
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN technicianSignature TEXT;`);
-} catch (e) { /* Column already exists */ }
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN customerSignature TEXT;`);
-} catch (e) { /* Column already exists */ }
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN photos TEXT;`);
-} catch (e) { /* Column already exists */ }
-try {
-    db.exec(`ALTER TABLE reports ADD COLUMN signatureToken TEXT;`);
-} catch (e) { /* Column already exists */ }
+// Add new columns if they don't exist (for existing databases)
+const addColumnIfNotExists = (table, column, type) => {
+    try {
+        const columns = db.prepare(`PRAGMA table_info(${table})`).all();
+        const exists = columns.some(c => c.name === column);
+        if (!exists) {
+            console.log(`Adding column ${column} to ${table}...`);
+            db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type};`);
+            console.log(`✅ Column ${column} added.`);
+        }
+    } catch (error) {
+        console.error(`❌ Failed to add column ${column} to ${table}:`, error.message);
+    }
+};
+
+addColumnIfNotExists('reports', 'productionYear', 'TEXT');
+addColumnIfNotExists('reports', 'customerEmail', 'TEXT');
+addColumnIfNotExists('reports', 'technicianSignature', 'TEXT');
+addColumnIfNotExists('reports', 'customerSignature', 'TEXT');
+addColumnIfNotExists('reports', 'photos', 'TEXT');
+addColumnIfNotExists('reports', 'signatureToken', 'TEXT');
 
 
 // Create default admin user if not exists
@@ -278,18 +281,23 @@ app.delete('/api/reports/:id', authMiddleware, (req, res) => {
 
 // Generate signature link
 app.post('/api/reports/:id/sign-link', authMiddleware, (req, res) => {
-    const existing = db.prepare('SELECT id, signatureToken FROM reports WHERE id = ? AND userId = ?').get(req.params.id, req.user.id);
-    if (!existing) {
-        return res.status(404).json({ error: 'Report not found' });
-    }
+    try {
+        const existing = db.prepare('SELECT id, signatureToken FROM reports WHERE id = ? AND userId = ?').get(req.params.id, req.user.id);
+        if (!existing) {
+            return res.status(404).json({ error: 'Report not found' });
+        }
 
-    let token = existing.signatureToken;
-    if (!token) {
-        token = uuidv4();
-        db.prepare('UPDATE reports SET signatureToken = ? WHERE id = ?').run(token, req.params.id);
-    }
+        let token = existing.signatureToken;
+        if (!token) {
+            token = uuidv4();
+            db.prepare('UPDATE reports SET signatureToken = ? WHERE id = ?').run(token, req.params.id);
+        }
 
-    res.json({ token, url: `/sign/${token}` });
+        res.json({ token, url: `/sign/${token}` });
+    } catch (error) {
+        console.error('Error generating signature link:', error);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
+    }
 });
 
 // ============== PUBLIC ENDPOINTS (No Auth Required) ==============
@@ -297,11 +305,11 @@ app.post('/api/reports/:id/sign-link', authMiddleware, (req, res) => {
 // Get public report info (limited fields)
 app.get('/api/public/reports/:token', (req, res) => {
     const report = db.prepare('SELECT id, customerName, contactPerson, deviceType, brand, model, serialNumber, faultDescription, actionTaken, status, technicianName, serviceDate FROM reports WHERE signatureToken = ?').get(req.params.token);
-    
+
     if (!report) {
         return res.status(404).json({ error: 'Invalid link' });
     }
-    
+
     // Don't expose sensitive info, only what's needed for signing
     res.json(report);
 });
@@ -309,7 +317,7 @@ app.get('/api/public/reports/:token', (req, res) => {
 // Submit public signature
 app.post('/api/public/reports/:token/sign', (req, res) => {
     const { signature, signerName } = req.body;
-    
+
     if (!signature) {
         return res.status(400).json({ error: 'Signature is required' });
     }
