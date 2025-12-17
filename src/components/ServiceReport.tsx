@@ -30,7 +30,29 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
         try {
             const { url } = await reportsApi.generateSignLink(data.id);
             const fullUrl = `${window.location.origin}${url}`;
-            navigator.clipboard.writeText(fullUrl);
+
+            // Robust copy to clipboard function
+            const copyToClipboard = async (text: string) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    return navigator.clipboard.writeText(text);
+                } else {
+                    // Fallback for non-secure contexts (HTTP)
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";  // Avoid scrolling to bottom
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        const successful = document.execCommand('copy');
+                        if (!successful) throw new Error('Copy command failed');
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            };
+
+            await copyToClipboard(fullUrl);
             setLinkCopied(true);
             setTimeout(() => setLinkCopied(false), 2000);
         } catch (error: any) {
