@@ -146,12 +146,7 @@ export function LoginPage() {
                     </p>
                 </div>
 
-                {/* Default credentials hint */}
-                <div className="mt-6 p-3 bg-slate-50 rounded-lg text-center">
-                    <p className="text-xs text-slate-500">
-                        {t('defaultCredentials')}: <span className="font-mono font-medium">admin / admin123</span>
-                    </p>
-                </div>
+
             </div>
         </div>
     );

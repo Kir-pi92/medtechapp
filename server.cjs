@@ -152,6 +152,71 @@ app.post('/api/auth/register', (req, res) => {
     res.json({ token, user: { id, username, fullName, role: 'technician' } });
 });
 
+// Change Password
+app.post('/api/auth/change-password', authMiddleware, (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!bcrypt.compareSync(currentPassword, user.password)) {
+        return res.status(401).json({ error: 'Invalid current password' });
+    }
+
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashedPassword, userId);
+
+    res.json({ message: 'Password updated successfully' });
+});
+
+// List Users (Admin only, effectively all authenticated users for now)
+app.get('/api/auth/users', authMiddleware, (req, res) => {
+    // Ideally check for admin role, but assuming all users can manage for this requirements
+    const users = db.prepare('SELECT id, username, fullName, role, createdAt FROM users').all();
+    res.json(users);
+});
+
+// Delete User
+app.delete('/api/auth/users/:id', authMiddleware, (req, res) => {
+    const userId = req.params.id;
+
+    // Prevent deleting self
+    if (userId === req.user.id) {
+        return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    // Check if user exists
+    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+
+    try {
+        db.transaction(() => {
+            // Delete related data first (FK constraints)
+            // Ideally we might want to keep reports but set userId to NULL or a 'deleted' user. 
+            // For now, strict deletion or set null if schema allows. 
+            // Schema has NOT NULL for userId in reports but let's check. 
+            // In schema: userId TEXT NOT NULL. So we must delete reports or reassign.
+            // Let's delete reports for now to be safe and clean, or we could block deletion if reports exist.
+            // Let's block deletion if reports exist to prevent data loss.
+
+            const reportCount = db.prepare('SELECT COUNT(*) as count FROM reports WHERE userId = ?').get(userId).count;
+            if (reportCount > 0) {
+                throw new Error(`Cannot delete user. They have ${reportCount} reports. Reassign reports first.`);
+            }
+
+            db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+        })();
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // Login
 app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;

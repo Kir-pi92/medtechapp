@@ -79,6 +79,23 @@ export const authApi = {
     getMe: async (): Promise<User> => {
         return apiRequest('/api/auth/me');
     },
+
+    changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+        return apiRequest('/api/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ currentPassword, newPassword }),
+        });
+    },
+
+    getUsers: async (): Promise<User[]> => {
+        return apiRequest('/api/auth/users');
+    },
+
+    deleteUser: async (id: string): Promise<void> => {
+        return apiRequest(`/api/auth/users/${id}`, {
+            method: 'DELETE',
+        });
+    },
 };
 
 // ============== REPORTS ==============

@@ -264,3 +264,11 @@ export const DEVICE_TYPES: DeviceType[] = [
     'Operating Table',
     'Other'
 ];
+
+export interface User {
+    id: string;
+    username: string;
+    fullName: string;
+    role: string;
+    createdAt?: string;
+}
