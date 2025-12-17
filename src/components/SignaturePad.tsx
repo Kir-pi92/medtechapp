@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Eraser, Check, X } from 'lucide-react';
+import { Eraser, Check, X, Upload } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 
 interface SignaturePadProps {
@@ -135,6 +135,23 @@ export function SignaturePad({ onSave, onClear, initialSignature, label, signerN
         setShowCanvas(false);
     };
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const signature = event.target?.result as string;
+            if (signature) {
+                onSave(signature);
+                setShowCanvas(false);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
     if (!showCanvas && initialSignature) {
         return (
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
@@ -187,12 +204,19 @@ export function SignaturePad({ onSave, onClear, initialSignature, label, signerN
 
                 {!hasSignature && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <span className="text-slate-400 text-sm">Buraya imza atınız</span>
+                        <span className="text-slate-400 text-sm">{t('signHere')}</span>
                     </div>
                 )}
             </div>
 
             <div className="flex gap-2 mt-3">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/jpg"
+                    onChange={handleFileUpload}
+                />
                 <button
                     type="button"
                     onClick={clearCanvas}
@@ -200,6 +224,14 @@ export function SignaturePad({ onSave, onClear, initialSignature, label, signerN
                 >
                     <Eraser className="w-4 h-4" />
                     Temizle
+                </button>
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-primary-600 hover:bg-primary-50 rounded-lg text-sm font-medium transition-colors border border-primary-200"
+                >
+                    <Upload className="w-4 h-4" />
+                    {t('uploadSignature')}
                 </button>
                 <button
                     type="button"
