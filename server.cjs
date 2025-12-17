@@ -602,6 +602,97 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
     }
 });
 
+// Backup/Restore Endpoints
+app.get('/api/admin/backup', authMiddleware, (req, res) => {
+    try {
+        const reports = db.prepare('SELECT * FROM reports').all();
+        // Parse JSON fields in reports
+        reports.forEach(r => {
+            if (r.partsUsed) r.partsUsed = JSON.parse(r.partsUsed);
+            if (r.photos) r.photos = JSON.parse(r.photos);
+        });
+
+        const settings = db.prepare('SELECT * FROM settings').all();
+        // Parse JSON fields in settings
+        settings.forEach(s => {
+            if (s.value) {
+                try { s.value = JSON.parse(s.value); } catch (e) { }
+            }
+        });
+
+        const backup = {
+            version: '1.0',
+            exportDate: new Date().toISOString(),
+            reports,
+            settings
+        };
+        res.json(backup);
+    } catch (error) {
+        console.error('Backup failed:', error);
+        res.status(500).json({ error: 'Backup failed' });
+    }
+});
+
+app.post('/api/admin/restore', authMiddleware, (req, res) => {
+    const backup = req.body;
+
+    if (!backup || !backup.reports) {
+        return res.status(400).json({ error: 'Invalid backup format' });
+    }
+
+    const restoreTransaction = db.transaction(() => {
+        // Clear existing data
+        db.prepare('DELETE FROM reports').run();
+
+        // Restore Reports
+        const insertReport = db.prepare(`
+            INSERT INTO reports (
+                id, userId, reportNumber, serviceDate, deviceType, brand, model, serialNumber,
+                tagNumber, productionYear, customerName, department, contactPerson, customerEmail,
+                faultDescription, actionTaken, partsUsed, status, technicianName, notes,
+                technicianSignature, customerSignature, photos, signatureToken, createdAt, updatedAt
+            ) VALUES (
+                @id, @userId, @reportNumber, @serviceDate, @deviceType, @brand, @model, @serialNumber,
+                @tagNumber, @productionYear, @customerName, @department, @contactPerson, @customerEmail,
+                @faultDescription, @actionTaken, @partsUsed, @status, @technicianName, @notes,
+                @technicianSignature, @customerSignature, @photos, @signatureToken, @createdAt, @updatedAt
+            )
+        `);
+
+        for (const report of backup.reports) {
+            // Ensure fields exist and JSON is stringified
+            insertReport.run({
+                ...report,
+                partsUsed: JSON.stringify(report.partsUsed || []),
+                photos: JSON.stringify(report.photos || []),
+                // Handle potentially missing new columns in old backups
+                signatureToken: report.signatureToken || null,
+                technicianSignature: report.technicianSignature || null,
+                customerSignature: report.customerSignature || null,
+                productionYear: report.productionYear || null,
+                customerEmail: report.customerEmail || null
+            });
+        }
+
+        // Restore Settings if present
+        if (backup.settings && Array.isArray(backup.settings)) {
+            db.prepare('DELETE FROM settings').run();
+            const insertSetting = db.prepare('INSERT INTO settings (key, value, updatedAt) VALUES (?, ?, CURRENT_TIMESTAMP)');
+            for (const setting of backup.settings) {
+                insertSetting.run(setting.key, JSON.stringify(setting.value));
+            }
+        }
+    });
+
+    try {
+        restoreTransaction();
+        res.json({ message: 'Restore successful', count: backup.reports.length });
+    } catch (error) {
+        console.error('Restore failed:', error);
+        res.status(500).json({ error: 'Restore failed: ' + error.message });
+    }
+});
+
 // Debug endpoint to check/fix DB schema
 app.get('/api/debug/db-check', (req, res) => {
     const results = {

@@ -1,7 +1,9 @@
 import { useRef } from 'react';
-import { Globe, Check, Upload, Trash2, Building2, Layout, ExternalLink } from 'lucide-react';
+import { Globe, Check, Upload, Trash2, Building2, Layout, ExternalLink, Database, Download } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { useTemplate } from '../TemplateContext';
+import { adminApi } from '../api';
+import { saveAs } from 'file-saver';
 import type { Language } from '../i18n';
 
 interface SettingsProps {
@@ -173,6 +175,84 @@ export function Settings({ onOpenTemplateEditor }: SettingsProps) {
                     <p className="text-sm text-slate-500 mt-4">
                         {t('settingsSaved')}
                     </p>
+                </div>
+            </div>
+            {/* Data Management Card */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+                    <div className="bg-primary-100 p-2 rounded-lg">
+                        <Database className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">{t('dataManagement')}</h3>
+                </div>
+
+                <div className="space-y-4">
+                    <p className="text-slate-600 text-sm">
+                        {t('dataManagementDescription')}
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        {/* Backup Button */}
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const data = await adminApi.backup();
+                                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                                    saveAs(blob, `MedTech_FullBackup_${new Date().toISOString().split('T')[0]}.json`);
+                                    alert(t('backupSuccess'));
+                                } catch (error) {
+                                    console.error('Backup failed', error);
+                                    alert('Backup failed');
+                                }
+                            }}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors border border-slate-200"
+                        >
+                            <Download className="w-4 h-4" />
+                            {t('backupDatabase')}
+                        </button>
+
+                        {/* Restore Button */}
+                        <div className="flex-1">
+                            <input
+                                type="file"
+                                id="restore-file"
+                                accept=".json"
+                                className="hidden"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    if (!confirm(t('restoreWarning'))) {
+                                        e.target.value = '';
+                                        return;
+                                    }
+
+                                    const reader = new FileReader();
+                                    reader.onload = async (event) => {
+                                        try {
+                                            const content = event.target?.result as string;
+                                            const data = JSON.parse(content);
+                                            const result = await adminApi.restore(data);
+                                            alert(`${t('restoreSuccess')} (${result.count} records)`);
+                                            window.location.reload(); // Reload to refresh data
+                                        } catch (error: any) {
+                                            console.error('Restore failed', error);
+                                            alert(t('restoreError') + error.message);
+                                        }
+                                    };
+                                    reader.readAsText(file);
+                                    e.target.value = '';
+                                }}
+                            />
+                            <button
+                                onClick={() => document.getElementById('restore-file')?.click()}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-red-50 text-red-600 rounded-lg font-medium transition-colors border border-red-200 hover:border-red-300"
+                            >
+                                <Upload className="w-4 h-4" />
+                                {t('restoreDatabase')}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

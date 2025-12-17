@@ -164,3 +164,18 @@ export const deviceApi = {
         return apiRequest(`/api/device/${kno}`);
     },
 };
+
+// ============== ADMIN ==============
+
+export const adminApi = {
+    backup: async (): Promise<any> => {
+        return apiRequest('/api/admin/backup');
+    },
+
+    restore: async (data: any): Promise<{ message: string; count: number }> => {
+        return apiRequest('/api/admin/restore', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+};

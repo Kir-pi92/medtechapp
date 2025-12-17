@@ -348,6 +348,17 @@ export const translations = {
         actionTakenRequired: 'Please describe the action taken',
         technicianNameRequired: 'Technician name is required',
         dateRequired: 'Date is required',
+
+        // Data Management
+        dataManagement: 'Data Management',
+        dataManagementDescription: 'Backup or restore database.',
+        backupDatabase: 'Backup Database',
+        restoreDatabase: 'Restore Database',
+        restoreWarning: 'WARNING: This will overwrite detailed current data with the backup. This action cannot be undone.',
+        backupSuccess: 'Backup downloaded successfully.',
+        restoreSuccess: 'Database restored successfully.',
+        restoreError: 'Restore failed: ',
+        selectBackupFile: 'Select Backup File',
     },
     tr: {
         // Header & Navigation
@@ -696,6 +707,17 @@ export const translations = {
         actionTakenRequired: 'Lütfen yapılan işlemi açıklayın',
         technicianNameRequired: 'Teknisyen adı zorunludur',
         dateRequired: 'Tarih zorunludur',
+
+        // Data Management
+        dataManagement: 'Veri Yönetimi',
+        dataManagementDescription: 'Veritabanı yedeğini al veya geri yükle.',
+        backupDatabase: 'Veritabanını Yedekle',
+        restoreDatabase: 'Veritabanını Geri Yükle',
+        restoreWarning: 'DİKKAT: Geri yükleme işlemi mevcut tüm verileri silecek ve yedeği geri yükleyecektir. Bu işlem geri alınamaz.',
+        backupSuccess: 'Yedek başarıyla indirildi.',
+        restoreSuccess: 'Veritabanı başarıyla geri yüklendi.',
+        restoreError: 'Geri yükleme başarısız oldu: ',
+        selectBackupFile: 'Yedek Dosyası Seç',
     },
 } as const;
 
