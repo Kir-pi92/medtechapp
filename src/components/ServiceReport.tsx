@@ -402,7 +402,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
             if (section.width === 'half' && nextSection?.width === 'half') {
                 // Render two sections side by side
                 result.push(
-                    <div key={`row-${i}`} className="grid grid-cols-2 gap-6 mb-6">
+                    <div key={`row-${i}`} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>{renderSection(section)}</div>
                         <div>{renderSection(nextSection)}</div>
                     </div>

@@ -249,22 +249,22 @@ export function ServiceForm({ onSubmit, initialData, isEditing }: ServiceFormPro
                         </div>
 
                         {fields.map((field, index) => (
-                            <div key={field.id} className="flex gap-3 items-start">
-                                <div className="flex-1">
+                            <div key={field.id} className="flex gap-3 items-start flex-col sm:flex-row">
+                                <div className="flex-1 w-full sm:w-auto">
                                     <input
                                         {...register(`partsUsed.${index}.name` as const)}
                                         placeholder={t('partName')}
                                         className="w-full rounded-lg border-slate-300 border p-2 text-sm"
                                     />
                                 </div>
-                                <div className="w-24">
+                                <div className="w-full sm:w-24">
                                     <input
                                         {...register(`partsUsed.${index}.code` as const)}
                                         placeholder={t('code')}
                                         className="w-full rounded-lg border-slate-300 border p-2 text-sm"
                                     />
                                 </div>
-                                <div className="w-20">
+                                <div className="w-full sm:w-20">
                                     <input
                                         type="number"
                                         {...register(`partsUsed.${index}.quantity` as const, { valueAsNumber: true })}
@@ -275,7 +275,7 @@ export function ServiceForm({ onSubmit, initialData, isEditing }: ServiceFormPro
                                 <button
                                     type="button"
                                     onClick={() => remove(index)}
-                                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    className="p-2 text-slate-400 hover:text-red-500 transition-colors self-end sm:self-center"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>

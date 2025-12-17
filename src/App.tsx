@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, LayoutDashboard, Search, FileText, Settings as SettingsIcon, Pencil, Trash2, LogOut, Loader2 } from 'lucide-react';
+import { PlusCircle, LayoutDashboard, Search, FileText, Settings as SettingsIcon, Pencil, Trash2, LogOut, Loader2, Menu, X } from 'lucide-react';
 import { ServiceForm } from './components/ServiceForm';
 import { ServiceReport } from './components/ServiceReport';
 import { Settings } from './components/Settings';
@@ -26,6 +26,7 @@ function App() {
   const [dateTo, setDateTo] = useState('');
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
 
   // Load reports from API when authenticated
@@ -159,6 +160,15 @@ function App() {
     return key ? t(key) : status.replace('_', ' ');
   };
 
+  const handleViewChange = (newView: typeof view) => {
+    setView(newView);
+    if (newView === 'new') {
+      setCurrentReport(null);
+      setEditingReport(null);
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   // Show loading while checking auth
   if (authLoading) {
     return (
@@ -181,17 +191,24 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header - Hidden when printing */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-10 print:hidden">
+      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 text-primary-700">
+            {/* Mobile Menu Button */}
+            <button
+              className="lg:hidden p-2 -ml-2 text-slate-600 hover:text-slate-900"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
             {/* Company Logo */}
             <CompanyLogo />
-            <h1 className="text-xl font-bold tracking-tight">{t('appName')}</h1>
+            <h1 className="text-xl font-bold tracking-tight hidden sm:block">{t('appName')}</h1>
           </div>
 
-          <nav className="flex gap-2">
+          <nav className="hidden lg:flex gap-2">
             <button
-              onClick={() => setView('dashboard')}
+              onClick={() => handleViewChange('dashboard')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === 'dashboard'
                 ? 'bg-primary-50 text-primary-700'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -201,11 +218,7 @@ function App() {
               {t('dashboard')}
             </button>
             <button
-              onClick={() => {
-                setCurrentReport(null);
-                setEditingReport(null);
-                setView('new');
-              }}
+              onClick={() => handleViewChange('new')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === 'new'
                 ? 'bg-primary-50 text-primary-700'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -215,7 +228,7 @@ function App() {
               {t('newEntry')}
             </button>
             <button
-              onClick={() => setView('settings')}
+              onClick={() => handleViewChange('settings')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${view === 'settings'
                 ? 'bg-primary-50 text-primary-700'
                 : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -240,27 +253,75 @@ function App() {
             </div>
           </nav>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-slate-200 shadow-lg animate-in slide-in-from-top-2 z-20">
+            <div className="p-4 space-y-2">
+              <div className="px-4 py-2 text-sm text-slate-500 border-b border-slate-100 mb-2">
+                {t('welcome')}, <span className="font-medium text-slate-900">{user?.fullName}</span>
+              </div>
+              <button
+                onClick={() => handleViewChange('dashboard')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${view === 'dashboard'
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                {t('dashboard')}
+              </button>
+              <button
+                onClick={() => handleViewChange('new')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${view === 'new'
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+              >
+                <PlusCircle className="w-5 h-5" />
+                {t('newEntry')}
+              </button>
+              <button
+                onClick={() => handleViewChange('settings')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${view === 'settings'
+                  ? 'bg-primary-50 text-primary-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+              >
+                <SettingsIcon className="w-5 h-5" />
+                {t('settings')}
+              </button>
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors border-t border-slate-100 mt-2"
+              >
+                <LogOut className="w-5 h-5" />
+                {t('logout')}
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Backup Reminder Modal */}
       {showBackupReminder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md mx-4 animate-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md animate-in zoom-in duration-200">
             <h3 className="text-xl font-bold text-slate-900 mb-2">{t('backupReminder')}</h3>
             <p className="text-slate-600 mb-6">{t('backupReminderMessage')}</p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end flex-wrap">
               <button
                 onClick={() => {
                   localStorage.setItem('medtech_lastBackupReminder', Date.now().toString());
                   setShowBackupReminder(false);
                 }}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors flex-1 sm:flex-none"
               >
                 {t('remindLater')}
               </button>
               <button
                 onClick={downloadBackup}
-                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors flex-1 sm:flex-none"
               >
                 {t('downloadBackup')}
               </button>
@@ -270,7 +331,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full print:p-0 print:max-w-none">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full print:p-0 print:max-w-none">
         {view === 'new' && (
           <div className="animate-in fade-in duration-300">
             <div className="mb-6">
@@ -314,35 +375,37 @@ function App() {
                 <h2 className="text-2xl font-bold text-slate-900">{t('serviceDashboard')}</h2>
                 <p className="text-slate-500">{t('dashboardDescription')}</p>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
                 {/* Date Filters */}
-                <div className="flex items-center gap-2 text-sm">
-                  <label className="text-slate-600">{t('from')}:</label>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  />
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <label className="text-slate-600">{t('to')}:</label>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                  />
+                <div className="flex gap-2">
+                  <div className="flex-1 flex items-center gap-2 text-sm">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                      placeholder={t('from')}
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center gap-2 text-sm">
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                      placeholder={t('to')}
+                    />
+                  </div>
                 </div>
                 {/* Search */}
-                <div className="relative">
+                <div className="relative flex-1 sm:flex-none">
                   <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     placeholder={t('searchPlaceholder')}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none w-48"
+                    className="w-full sm:w-48 pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                   />
                 </div>
                 {/* Export Buttons */}
@@ -350,19 +413,19 @@ function App() {
                   <div className="flex gap-2">
                     <button
                       onClick={exportToExcel}
-                      className="flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
                       title={t('exportExcel')}
                     >
                       <FileText className="w-4 h-4" />
-                      Excel
+                      <span className="sm:hidden">Excel</span>
                     </button>
                     <button
                       onClick={downloadBackup}
-                      className="flex items-center gap-2 px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      className="flex-1 sm:flex-none justify-center flex items-center gap-2 px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
                       title={t('downloadBackup')}
                     >
                       <FileText className="w-4 h-4" />
-                      {t('backup')}
+                      <span className="sm:hidden">{t('backup')}</span>
                     </button>
                   </div>
                 )}
@@ -371,54 +434,54 @@ function App() {
 
             {/* Statistics Cards */}
             {reports.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary-100 rounded-lg">
+                    <div className="p-2 bg-primary-100 rounded-lg flex-shrink-0">
                       <FileText className="w-5 h-5 text-primary-600" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-900">{reports.length}</p>
-                      <p className="text-sm text-slate-500">{t('totalReports')}</p>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{reports.length}</p>
+                      <p className="text-xs sm:text-sm text-slate-500 truncate">{t('totalReports')}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
                       <FileText className="w-5 h-5 text-green-600" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-600">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-green-600 truncate">
                         {reports.filter(r => r.status === 'completed').length}
                       </p>
-                      <p className="text-sm text-slate-500">{t('completed')}</p>
+                      <p className="text-xs sm:text-sm text-slate-500 truncate">{t('completed')}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-100 rounded-lg">
+                    <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
                       <FileText className="w-5 h-5 text-yellow-600" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-600">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-yellow-600 truncate">
                         {reports.filter(r => r.status === 'pending').length}
                       </p>
-                      <p className="text-sm text-slate-500">{t('pending')}</p>
+                      <p className="text-xs sm:text-sm text-slate-500 truncate">{t('pending')}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-100 rounded-lg">
+                    <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
                       <FileText className="w-5 h-5 text-orange-600" />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-orange-600">
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold text-orange-600 truncate">
                         {reports.filter(r => r.status === 'parts_needed').length}
                       </p>
-                      <p className="text-sm text-slate-500">{t('partsNeeded')}</p>
+                      <p className="text-xs sm:text-sm text-slate-500 truncate">{t('partsNeeded')}</p>
                     </div>
                   </div>
                 </div>
@@ -426,12 +489,12 @@ function App() {
             )}
 
             {reports.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed">
+              <div className="text-center py-20 bg-white rounded-xl border border-slate-200 border-dashed px-4">
                 <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-slate-400" />
                 </div>
                 <h3 className="text-lg font-medium text-slate-900">{t('noReportsFound')}</h3>
-                <p className="text-slate-500 mt-1 mb-6">{t('noReportsDescription')}</p>
+                <p className="text-slate-500 mt-1 mb-6 max-w-sm mx-auto">{t('noReportsDescription')}</p>
                 <button
                   onClick={() => setView('new')}
                   className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -442,68 +505,70 @@ function App() {
               </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">{t('reportNo')}</th>
-                      <th className="px-6 py-4 font-semibold">{t('date')}</th>
-                      <th className="px-6 py-4 font-semibold">{t('customer')}</th>
-                      <th className="px-6 py-4 font-semibold">{t('device')}</th>
-                      <th className="px-6 py-4 font-semibold">{t('technician')}</th>
-                      <th className="px-6 py-4 font-semibold">{t('status')}</th>
-                      <th className="px-6 py-4 font-semibold text-right">{t('actions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredReports.map((report) => (
-                      <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 font-mono text-sm text-slate-600">
-                          {report.reportNumber || `#${report.id?.slice(-6).toUpperCase()}`}
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">{report.serviceDate}</td>
-                        <td className="px-6 py-4 font-medium text-slate-900">{report.customerName}</td>
-                        <td className="px-6 py-4 text-slate-600">
-                          <div className="font-medium text-slate-900">{report.deviceType}</div>
-                          <div className="text-xs text-slate-500">{report.brand} {report.model}</div>
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">{report.technicianName}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                            ${report.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                report.status === 'parts_needed' ? 'bg-orange-100 text-orange-800' :
-                                  'bg-red-100 text-red-800'}`}>
-                            {getStatusTranslation(report.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleViewReport(report)}
-                              className="text-primary-600 hover:text-primary-900 font-medium text-sm"
-                            >
-                              {t('viewReport')}
-                            </button>
-                            <button
-                              onClick={() => handleEditReport(report)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              title={t('editReport')}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirmId(report.id || null)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title={t('deleteReport')}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4 font-semibold">{t('reportNo')}</th>
+                        <th className="px-6 py-4 font-semibold">{t('date')}</th>
+                        <th className="px-6 py-4 font-semibold">{t('customer')}</th>
+                        <th className="px-6 py-4 font-semibold">{t('device')}</th>
+                        <th className="px-6 py-4 font-semibold">{t('technician')}</th>
+                        <th className="px-6 py-4 font-semibold">{t('status')}</th>
+                        <th className="px-6 py-4 font-semibold text-right">{t('actions')}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredReports.map((report) => (
+                        <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 font-mono text-sm text-slate-600">
+                            {report.reportNumber || `#${report.id?.slice(-6).toUpperCase()}`}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600">{report.serviceDate}</td>
+                          <td className="px-6 py-4 font-medium text-slate-900">{report.customerName}</td>
+                          <td className="px-6 py-4 text-slate-600">
+                            <div className="font-medium text-slate-900">{report.deviceType}</div>
+                            <div className="text-xs text-slate-500">{report.brand} {report.model}</div>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600">{report.technicianName}</td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                                ${report.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  report.status === 'parts_needed' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-red-100 text-red-800'}`}>
+                              {getStatusTranslation(report.status)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleViewReport(report)}
+                                className="text-primary-600 hover:text-primary-900 font-medium text-sm"
+                              >
+                                {t('viewReport')}
+                              </button>
+                              <button
+                                onClick={() => handleEditReport(report)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title={t('editReport')}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirmId(report.id || null)}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title={t('deleteReport')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -512,8 +577,8 @@ function App() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteConfirmId(null)}>
-          <div className="bg-white rounded-xl p-6 w-96 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirmId(null)}>
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('confirmDelete')}</h3>
             <p className="text-slate-600 mb-6">{t('confirmDeleteMessage')}</p>
             <div className="flex gap-3 justify-end">
