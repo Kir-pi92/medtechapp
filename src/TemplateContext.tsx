@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { settingsApi } from './api';
+import { useAuth } from './AuthContext';
 
 export type ReportSectionId =
     | 'header'
@@ -89,6 +91,9 @@ interface TemplateProviderProps {
 }
 
 export function TemplateProvider({ children }: TemplateProviderProps) {
+    const { isAuthenticated } = useAuth(); // Assuming useAuth is available in this scope, if not need to import
+    const [isLoading, setIsLoading] = useState(false);
+
     const [templates, setTemplates] = useState<TemplateConfig[]>(() => {
         const saved = localStorage.getItem('medtech_templates');
         if (saved) {
@@ -117,7 +122,53 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
 
     const template = templates.find(t => t.id === activeTemplateId) || templates[0] || createDefaultTemplate();
 
-    // Save to localStorage whenever templates change
+    // Import these
+    // import { settingsApi } from './api';
+    // import { useAuth } from './AuthContext';
+
+    // Load settings from backend when authenticated
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const loadSettings = async () => {
+            setIsLoading(true);
+            try {
+                const settings = await settingsApi.get();
+                if (settings) {
+                    if (settings.companyName) {
+                        setCompanyName(settings.companyName, false); // false = don't save back to server immediately
+                    }
+                    if (settings.companyLogo) {
+                        setCompanyLogo(settings.companyLogo, false);
+                    }
+                    if (settings.templateConfig && Object.keys(settings.templateConfig).length > 0) {
+                        // Assuming templateConfig stores the whole templates array or just config
+                        // For simplicity, let's say it stores the templates array under a key 'templates'
+                        // Or if the backend schema has 'templateConfig' as TEXT, we can store everything there.
+                        // Based on server.cjs: templateConfig TEXT. 
+
+                        // Let's adopt a strategy: Sync templates array with backend.
+                        // But existing backend structure in server.cjs uses `templateConfig`.
+                        // We will store the `templates` array inside `templateConfig`.
+
+                        const config: any = settings.templateConfig;
+                        if (config.templates && Array.isArray(config.templates)) {
+                            setTemplates(config.templates);
+                            if (config.activeId) setActiveTemplateId(config.activeId);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load settings:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadSettings();
+    }, [isAuthenticated]);
+
+    // Save to localStorage whenever templates change (Keep this for offline/fast access)
     useEffect(() => {
         localStorage.setItem('medtech_templates', JSON.stringify(templates));
     }, [templates]);
@@ -125,6 +176,47 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
     useEffect(() => {
         localStorage.setItem('medtech_active_template', activeTemplateId);
     }, [activeTemplateId]);
+
+    // Save to Backend Helper
+    // We want to avoid saving on every keystroke, but for now simple approach:
+    // When critical data changes (Logo, Name, or Template Structure on save/update), push to backend.
+    // However, `updateCurrentTemplate` is called often.
+    // Let's create a debounced save effect or just save when specific actions happen.
+    // Ideally, we should unify state. But for "Company Logo" specifically requested:
+    // We can add a specialized effect for syncing specific parts if we want.
+    // Or just save everything. Let's save everything but maybe debounce it?
+
+    // Actually, `server.cjs` expects `companyName`, `companyLogo`, `templateConfig`.
+    // Let's trigger a save whenever `templates` change, but use a timeout to debounce.
+
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        const handler = setTimeout(() => {
+            const settingsToSave = {
+                // Wait, the data model in `server.cjs` separates companyName/Logo from `templateConfig`.
+                // But in frontend `TemplateConfig` includes `companyName` and `companyLogo`.
+                // We should probably sync the ACTIVE template's info to the top-level DB columns as well for backwards compatibility/easier reading?
+                // Or just use the first/active template. 
+                // Let's proceed with saving the ACTIVE template's name/logo to the columns, AND the full templates array to the JSON blob.
+
+                companyName: template.companyName,
+                companyLogo: template.companyLogo || undefined,
+                templateConfig: {
+                    templates: templates,
+                    activeId: activeTemplateId
+                }
+            };
+
+            // Avoid saving if we are currently loading
+            if (!isLoading) {
+                settingsApi.save(settingsToSave).catch(e => console.error("Auto-save settings failed", e));
+            }
+        }, 2000); // 2 second debounce
+
+        return () => clearTimeout(handler);
+    }, [templates, activeTemplateId, isAuthenticated, isLoading]);
+
 
     const updateCurrentTemplate = (updates: Partial<TemplateConfig>) => {
         setTemplates(prev => prev.map(t =>
@@ -202,11 +294,19 @@ export function TemplateProvider({ children }: TemplateProviderProps) {
         });
     };
 
-    const setCompanyLogo = (logo: string | null) => {
+    // Modified setters to accept a "save" flag? No, generic update logic handles it via useEffect.
+    // Just need to ensure they update the state.
+
+    const setCompanyLogo = (logo: string | null, _save: boolean = true) => {
+        // Ignoring _save flag because useEffect handles it. 
+        // But if we're loading, we might want to suppress the effect-trigger? 
+        // "isLoading" state in useEffect dep array helps, or we check it inside.
+        // Actually, setting state WILL trigger the effect. 
+        // We added (!isLoading) check in the effect.
         updateCurrentTemplate({ companyLogo: logo });
     };
 
-    const setCompanyName = (name: string) => {
+    const setCompanyName = (name: string, _save: boolean = true) => {
         updateCurrentTemplate({ companyName: name });
     };
 
