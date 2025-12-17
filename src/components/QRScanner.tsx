@@ -38,6 +38,21 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
         setIsScanning(true);
 
         try {
+            // Check if camera is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('NOT_SUPPORTED');
+            }
+
+            // Clean up existing instance if any
+            if (scannerRef.current) {
+                try {
+                    await scannerRef.current.stop();
+                    // await scannerRef.current.clear(); // clear() removes the element content, might break re-use if not careful
+                } catch (e) {
+                    // ignore
+                }
+            }
+
             const html5QrCode = new Html5Qrcode("qr-reader");
             scannerRef.current = html5QrCode;
 
@@ -60,12 +75,27 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
                         setError(t('invalidQrCode'));
                     }
                 },
-                () => { } // Ignore errors during scanning
+                (errorMessage) => {
+                    // verbose logging might fill console, but useful for debug
+                    // console.warn(errorMessage);
+                }
             );
-        } catch (err) {
+        } catch (err: any) {
             setIsScanning(false);
-            setError(t('cameraAccessDenied'));
             console.error('QR Scanner error:', err);
+
+            let msg = t('cameraAccessDenied');
+            if (err.message === 'NOT_SUPPORTED') {
+                msg = t('cameraNotSupported');
+            } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                msg = t('cameraPermissionDenied');
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                msg = t('cameraNotFound');
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                msg = t('cameraInUse');
+            }
+
+            setError(msg);
         }
     };
 

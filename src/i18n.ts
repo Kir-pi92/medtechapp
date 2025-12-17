@@ -380,6 +380,12 @@ export const translations = {
         enterCurrentPassword: 'Enter current password',
         cannotDeleteSelf: 'You cannot delete your own account.',
         cannotDeleteWithReports: 'Cannot delete user with existing reports.',
+
+        // Camera Errors
+        cameraNotSupported: 'Your browser does not support camera access.',
+        cameraPermissionDenied: 'Camera access denied. Please allow camera permission in your browser settings (lock icon in address bar) and refresh.',
+        cameraNotFound: 'Camera not found. Please ensure your device has a camera.',
+        cameraInUse: 'Camera not accessible. Another application might be using it.',
     },
     tr: {
         // Header & Navigation
@@ -760,6 +766,12 @@ export const translations = {
         enterCurrentPassword: 'Mevcut şifrenizi girin',
         cannotDeleteSelf: 'Kendi hesabınızı silemezsiniz.',
         cannotDeleteWithReports: 'Bu kullanıcının rapor kayıtları var, önce onları aktarmanız veya silmeniz gerekir.',
+
+        // Camera Errors
+        cameraNotSupported: 'Tarayıcınız kamera erişimini desteklemiyor.',
+        cameraPermissionDenied: 'Kamera erişimi reddedildi. Lütfen tarayıcı ayarlarından (adres çubuğundaki kilit simgesi) kamera izni verin ve sayfayı yenileyin.',
+        cameraNotFound: 'Kamera bulunamadı. Cihazınızın kamerası olduğundan emin olun.',
+        cameraInUse: 'Kameraya erişilemiyor. Başka bir uygulama kamerayı kullanıyor olabilir.',
     },
 } as const;
 
@@ -881,3 +893,4 @@ export const statusTranslationMap: Record<string, TranslationKey> = {
     'parts_needed': 'partsNeeded',
     'scrapped': 'scrapped',
 };
+
