@@ -569,7 +569,7 @@ export const translations = {
         ecmo: 'ECMO',
         heartLungMachine: 'Kalp-Akciğer Makinesi',
         // Device Types - Diyaliz
-        hemodialysisMachine: 'Hemodiyaliz Cihazı',
+        hemodialysisMachine: 'Hemodialysis Machine',
         peritonealDialysis: 'Periton Diyalizi',
         waterTreatmentSystem: 'Su Arıtma Sistemi',
         // Device Types - Fizik Tedavi
@@ -605,7 +605,7 @@ export const translations = {
         // Device Types - Genel
         bloodPressureMonitor: 'Tansiyon Aleti',
         thermometer: 'Termometre',
-        glucometer: 'Şeker Ölçüm Cihazı',
+        glucometer: 'Glucometer',
         scale: 'Tartı',
         heightMeter: 'Boy Ölçer',
         hospitalBed: 'Hasta Yatağı',
@@ -614,6 +614,86 @@ export const translations = {
         examinationLight: 'Muayene Lambası',
         operatingTable: 'Ameliyat Masası',
         other: 'Diğer',
+
+        // Settings
+        settingsTitle: 'Ayarlar',
+        settingsDescription: 'Uygulama tercihlerini yapılandırın.',
+        languageSettings: 'Dil Ayarları',
+        selectLanguage: 'Dil Seçin',
+        english: 'English',
+        turkish: 'Türkçe',
+        settingsSaved: 'Ayarlar otomatik olarak kaydedilir.',
+
+        // Template Editor
+        templateEditor: 'Rapor Şablonu',
+        templateEditorDescription: 'Bölümleri sürükleyerek rapor düzenini özelleştirin.',
+        dragToReorder: 'Bölümleri sıralamak için sürükleyin',
+        resetTemplate: 'Varsayılana Sıfırla',
+        sectionHeader: 'Başlık',
+        sectionCustomerInfo: 'Müşteri Bilgileri',
+        sectionDeviceInfo: 'Cihaz Bilgileri',
+        sectionFaultDescription: 'Arıza Açıklaması',
+        sectionActionTaken: 'Yapılan İşlem',
+        sectionPartsUsed: 'Kullanılan Parçalar',
+        sectionSignatures: 'İmzalar',
+        visible: 'Görünür',
+        hidden: 'Gizli',
+
+        // Company Settings
+        companySettings: 'Şirket Ayarları',
+        companyLogo: 'Şirket Logosu',
+        uploadLogo: 'Logo Yükle',
+        removeLogo: 'Logoyu Kaldır',
+        companyName: 'Şirket Adı',
+        logoPreview: 'Logo Önizleme',
+        noLogoUploaded: 'Logo yüklenmedi',
+
+        // Multiple Templates
+        savedTemplates: 'Kaydedilen Şablonlar',
+        newTemplate: 'Yeni Şablon',
+        templateName: 'Şablon Adı',
+        saveAsNew: 'Yeni Olarak Kaydet',
+        duplicate: 'Çoğalt',
+        deleteTemplate: 'Sil',
+        confirmDeleteTemplate: 'Bu şablonu silmek istediğinizden emin misiniz?',
+        defaultTemplate: 'Varsayılan Şablon',
+        activeTemplate: 'Aktif',
+
+        // Section Sizing
+        sectionSize: 'Bölüm Boyutu',
+        compact: 'Kompakt',
+        normal: 'Normal',
+        large: 'Geniş',
+
+        // Section Width
+        sectionWidth: 'Bölüm Genişliği',
+        fullWidth: 'Tam Genişlik',
+        halfWidth: 'Yarım Genişlik',
+
+        // Design Options
+        designSettings: 'Tasarım Ayarları',
+        primaryColor: 'Ana Renk',
+        fontFamily: 'Yazı Tipi',
+        showGridLines: 'Izgara Çizgilerini Göster',
+        paperSize: 'Kağıt Boyutu',
+        a4: 'A4',
+        letter: 'Letter',
+
+        // PDF Export
+        exportPdf: 'PDF Dışa Aktar',
+        downloadPdf: 'PDF İndir',
+        exporting: 'Dışa Aktarılıyor...',
+
+        // Validation messages
+        deviceTypeRequired: 'Cihaz türü zorunludur',
+        brandRequired: 'Marka zorunludur',
+        modelRequired: 'Model zorunludur',
+        serialNumberRequired: 'Seri numarası zorunludur',
+        customerNameRequired: 'Müşteri/Hastane adı zorunludur',
+        faultDescriptionRequired: 'Lütfen detaylı arıza açıklaması girin',
+        actionTakenRequired: 'Lütfen yapılan işlemi açıklayın',
+        technicianNameRequired: 'Teknisyen adı zorunludur',
+        dateRequired: 'Tarih zorunludur',
     },
 } as const;
 
