@@ -35,11 +35,11 @@ export interface TemplateConfig {
 
 const defaultSections: ReportSection[] = [
     { id: 'header', visible: true, size: 'normal', width: 'full' },
-    { id: 'customerInfo', visible: true, size: 'normal', width: 'half' },
-    { id: 'deviceInfo', visible: true, size: 'normal', width: 'half' },
-    { id: 'faultDescription', visible: true, size: 'normal', width: 'full' },
-    { id: 'actionTaken', visible: true, size: 'normal', width: 'full' },
-    { id: 'partsUsed', visible: true, size: 'normal', width: 'full' },
+    { id: 'customerInfo', visible: true, size: 'compact', width: 'half' },
+    { id: 'deviceInfo', visible: true, size: 'compact', width: 'half' },
+    { id: 'faultDescription', visible: true, size: 'compact', width: 'full' },
+    { id: 'actionTaken', visible: true, size: 'compact', width: 'full' },
+    { id: 'partsUsed', visible: true, size: 'compact', width: 'full' },
     { id: 'signatures', visible: true, size: 'normal', width: 'full' },
 ];
 

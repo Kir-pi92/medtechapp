@@ -101,17 +101,17 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
     const getSizeStyles = (size?: 'compact' | 'normal' | 'large') => {
         switch (size) {
             case 'compact':
-                return { padding: '12px', fontSize: '0.8rem', minHeight: '50px' };
+                return { padding: '8px', fontSize: '0.75rem', minHeight: '30px' };
             case 'large':
-                return { padding: '24px', fontSize: '1rem', minHeight: '140px' };
+                return { padding: '20px', fontSize: '1rem', minHeight: '120px' };
             default:
-                return { padding: '16px', fontSize: '0.875rem', minHeight: '100px' };
+                return { padding: '12px', fontSize: '0.8125rem', minHeight: '60px' };
         }
     };
 
     // Section components with professional styling
     const HeaderSection = ({ section }: { section: ReportSection }) => (
-        <div className="mb-8">
+        <div className="mb-4">
             {/* Top banner */}
             <div
                 className="rounded-t-lg px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4"
@@ -186,16 +186,16 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                         {t('customerInfo')}
                     </h3>
                 </div>
-                <div className="p-4 space-y-3" style={{ fontSize: sizeStyles.fontSize }}>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <div className="p-3 space-y-1" style={{ fontSize: sizeStyles.fontSize }}>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('customerLabel')}</span>
                         <span className="font-semibold text-slate-900 text-right">{data.customerName}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('departmentLabel')}</span>
                         <span className="font-medium text-slate-700 text-right">{data.department || '-'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2">
+                    <div className="flex justify-between items-center py-1">
                         <span className="text-slate-500 font-medium">{t('contactLabel')}</span>
                         <span className="font-medium text-slate-700 text-right">{data.contactPerson || '-'}</span>
                     </div>
@@ -214,24 +214,24 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                         {t('deviceInfo')}
                     </h3>
                 </div>
-                <div className="p-4 space-y-3" style={{ fontSize: sizeStyles.fontSize }}>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <div className="p-3 space-y-1" style={{ fontSize: sizeStyles.fontSize }}>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('deviceLabel')}</span>
                         <span className="font-semibold text-slate-900">{data.deviceType}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('brandModel')}</span>
                         <span className="font-medium text-slate-700">{data.brand} / {data.model}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('serialNo')}</span>
                         <span className="font-mono text-slate-700">{data.serialNumber}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
                         <span className="text-slate-500 font-medium">{t('tagNo')}</span>
                         <span className="font-mono text-slate-700">{data.tagNumber || '-'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2">
+                    <div className="flex justify-between items-center py-1">
                         <span className="text-slate-500 font-medium">{t('productionYearLabel')}</span>
                         <span className="font-mono text-slate-700">{data.productionYear || '-'}</span>
                     </div>
@@ -298,7 +298,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                         {t('partsUsed')}
                     </h3>
                 </div>
-                <div className="p-4">
+                <div className="px-4 py-2">
                     <table className="w-full" style={{ fontSize: sizeStyles.fontSize }}>
                         <thead>
                             <tr className="border-b border-slate-200">
@@ -310,9 +310,9 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                         <tbody className="divide-y divide-slate-100">
                             {data.partsUsed.map((part, idx) => (
                                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                    <td className="py-3 font-medium text-slate-900">{part.name}</td>
-                                    <td className="py-3 font-mono text-slate-500">{part.code || '-'}</td>
-                                    <td className="py-3 text-right font-medium text-slate-900">{part.quantity}</td>
+                                    <td className="py-1 font-medium text-slate-900">{part.name}</td>
+                                    <td className="py-1 font-mono text-slate-500">{part.code || '-'}</td>
+                                    <td className="py-1 text-right font-medium text-slate-900">{part.quantity}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -329,8 +329,8 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
                     {t('signatures')}
                 </h3>
             </div>
-            <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                         <div className="text-sm text-slate-500 mb-2">{t('technicianSignature')}</div>
                         <div className="font-semibold text-slate-900 mb-4">{data.technicianName}</div>
@@ -445,7 +445,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
             if (section.width === 'half' && nextSection?.width === 'half') {
                 // Render two sections side by side
                 result.push(
-                    <div key={`row-${i}`} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div key={`row-${i}`} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                         <div>{renderSection(section)}</div>
                         <div>{renderSection(nextSection)}</div>
                     </div>
@@ -454,7 +454,7 @@ export function ServiceReport({ data, onBack, onEdit }: ServiceReportProps) {
             } else {
                 // Render single section full width
                 result.push(
-                    <div key={`row-${i}`} className="mb-6">
+                    <div key={`row-${i}`} className="mb-3">
                         {renderSection(section)}
                     </div>
                 );
