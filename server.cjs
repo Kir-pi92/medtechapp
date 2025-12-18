@@ -454,8 +454,13 @@ async function getTurkishProxies() {
     const strictSources = [
         'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=TR&ssl=all&anonymity=all',
         'https://www.proxy-list.download/api/v1/get?type=http&country=TR',
-        'https://raw.githubusercontent.com/roosterkid/openproxylist/master/HTTPS_raw.txt', // Generic but often has TR
-        'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt' // Generic
+        'https://raw.githubusercontent.com/roosterkid/openproxylist/master/HTTPS_raw.txt',
+        'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt',
+        'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt',
+        'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt',
+        'https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt',
+        'https://proxyspace.pro/http.txt',
+        'https://proxyspace.pro/https.txt'
     ];
 
     let proxies = [];
@@ -502,6 +507,14 @@ app.get('/api/device/:kno', async (req, res) => {
         'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
+        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
     };
 
     /**
@@ -573,13 +586,16 @@ app.get('/api/device/:kno', async (req, res) => {
         console.log("🔄 Direct fetch failed or restricted. Attempting automatic proxy fallback...");
         const proxies = await getTurkishProxies();
 
-        // Try up to 10 proxies from the list
-        for (let i = 0; i < Math.min(proxies.length, 10); i++) {
+        // Try up to 30 proxies from the list for better coverage
+        const maxAttempts = Math.min(proxies.length, 30);
+        for (let i = 0; i < maxAttempts; i++) {
             const proxyUrl = proxies[i];
+            console.log(`[Attempt ${i + 1}/${maxAttempts}] Trying proxy: ${proxyUrl}`);
             const result = await attemptFetch(proxyUrl);
 
             if (result.success) {
                 workingProxy = proxyUrl; // Cache for next time
+                console.log(`✅ SUCCESS using proxy: ${proxyUrl}`);
                 return res.json({ success: true, data: result.data, kno, usedProxy: proxyUrl });
             }
         }
