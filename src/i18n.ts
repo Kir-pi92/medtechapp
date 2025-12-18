@@ -70,6 +70,8 @@ export const translations = {
         retryFetch: 'Retry',
         manualUrlEntry: 'Or enter URL manually',
         fetchData: 'Fetch Data',
+        searchingTurkeyProxy: 'Searching for a Turkish proxy...',
+        proxyAttemptInProgress: 'Testing proxy connections...',
 
         // Table Headers
         date: 'Date',
@@ -456,6 +458,8 @@ export const translations = {
         retryFetch: 'Tekrar Dene',
         manualUrlEntry: 'Veya URL\'yi manuel girin',
         fetchData: 'Verileri Getir',
+        searchingTurkeyProxy: 'Türkiye proxy\'si aranıyor...',
+        proxyAttemptInProgress: 'Proxy bağlantıları deneniyor...',
 
         // Table Headers
         date: 'Tarih',

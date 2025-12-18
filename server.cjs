@@ -441,43 +441,42 @@ const { fetch, ProxyAgent } = require('undici');
 
 // Cache for proxies
 let proxyList = [];
+let workingProxy = null;
 let lastProxyUpdate = 0;
 
 async function getTurkishProxies() {
-    // Force refresh if list is empty or old
-    if (proxyList.length > 0 && Date.now() - lastProxyUpdate < 10 * 60 * 1000) {
+    // Force refresh if list is empty or old (1 hour)
+    if (proxyList.length > 0 && Date.now() - lastProxyUpdate < 60 * 60 * 1000) {
         return proxyList;
     }
 
     console.log('🔄 Fetching new Turkish proxy list...');
-    const sources = [
-        // Only use strict Turkey lists
+    const strictSources = [
         'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=TR&ssl=all&anonymity=all',
         'https://www.proxy-list.download/api/v1/get?type=http&country=TR',
-        'https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt' // This is global too, checking others
-    ];
-    // Actually, monosans is global. Let's stick to API based ones or filter.
-    // Better list:
-    const strictSources = [
-        'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=TR&ssl=all&anonymity=all',
-        'https://www.proxy-list.download/api/v1/get?type=http&country=TR',
-        // spys.one is hard to scrape.
-        // Let's use a smaller set but ensure quality.
+        'https://raw.githubusercontent.com/roosterkid/openproxylist/master/HTTPS_raw.txt', // Generic but often has TR
+        'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt' // Generic
     ];
 
-    // Reset list
     let proxies = [];
 
     for (const source of strictSources) {
         try {
-            const response = await fetch(source);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(source, { signal: controller.signal });
+            clearTimeout(timeout);
+
             if (response.ok) {
                 const text = await response.text();
                 const lines = text.split('\n');
                 lines.forEach(line => {
                     const clean = line.trim();
                     if (clean && clean.includes(':')) {
-                        proxies.push(`http://${clean}`);
+                        // Basic format check ip:port
+                        if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/.test(clean)) {
+                            proxies.push(`http://${clean}`);
+                        }
                     }
                 });
             }
@@ -486,11 +485,10 @@ async function getTurkishProxies() {
         }
     }
 
-    // Shuffle proxies to load balance
-    proxies = proxies.sort(() => Math.random() - 0.5);
-    proxyList = [...new Set(proxies)]; // Remove duplicates
+    // Filter duplicates and shuffle
+    proxyList = [...new Set(proxies)].sort(() => Math.random() - 0.5);
     lastProxyUpdate = Date.now();
-    console.log(`✅ Found ${proxyList.length} potential Turkish proxies.`);
+    console.log(`✅ Found ${proxyList.length} potential proxies.`);
     return proxyList;
 }
 
@@ -499,68 +497,97 @@ app.get('/api/device/:kno', async (req, res) => {
     const url = `https://sbu2.saglik.gov.tr/QR/QR.aspx?kno=${kno}`;
 
     const headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
     };
 
-    try {
-        // Mode 1: Manual Proxy
-        if (process.env.QR_PROXY_URL && process.env.QR_PROXY_URL !== 'AUTO') {
-            const proxyAgent = new ProxyAgent(process.env.QR_PROXY_URL);
-            const response = await fetch(url, { headers, dispatcher: proxyAgent });
-            if (!response.ok) throw new Error(`Status: ${response.status}`);
-            const html = await response.text();
-            const data = parseHtmlTable(html);
-            return res.json({ success: true, data, kno });
-        }
+    /**
+     * Attempts to fetch data using a specific proxy or direct connection
+     */
+    async function attemptFetch(proxyUrl = null) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), proxyUrl ? 5000 : 8000);
 
-        // Mode 2: Auto Proxy (or fallback if direct failed and AUTO is enabled)
-        if (process.env.QR_PROXY_URL === 'AUTO') {
-            const proxies = await getTurkishProxies();
+        try {
+            const options = {
+                headers,
+                signal: controller.signal,
+            };
 
-            // Try up to 5 random proxies from the list
-            for (let i = 0; i < Math.min(proxies.length, 10); i++) {
-                const proxyUrl = proxies[i];
-                console.log(`Trying Proxy [${i + 1}/10]: ${proxyUrl}`);
-                try {
-                    const proxyAgent = new ProxyAgent(proxyUrl);
-                    // Short timeout for proxies
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 3000);
-
-                    const response = await fetch(url, {
-                        headers,
-                        dispatcher: proxyAgent,
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeout);
-
-                    if (response.ok) {
-                        const html = await response.text();
-                        // Basic check if we got a valid response, not a proxy blocked page
-                        if (html.includes('KİMLİK NO') || html.includes('TÜR')) {
-                            console.log(`✅ Success with proxy: ${proxyUrl}`);
-                            const data = parseHtmlTable(html);
-                            return res.json({ success: true, data, kno });
-                        }
-                    }
-                } catch (e) {
-                    // Continue to next proxy
-                }
+            if (proxyUrl) {
+                options.dispatcher = new ProxyAgent(proxyUrl);
+                console.log(`📡 Attempting fetch via proxy: ${proxyUrl}`);
+            } else {
+                console.log(`🌐 Attempting direct fetch: ${url}`);
             }
-            throw new Error('All automatic proxies failed. Please try again or use a manual proxy.');
+
+            const response = await fetch(url, options);
+            clearTimeout(timeout);
+
+            if (response.ok) {
+                const html = await response.text();
+                if (html.includes('KİMLİK NO') || html.includes('TÜR')) {
+                    const data = parseHtmlTable(html);
+                    // Check if data is actually populated
+                    if (data.serialNumber || data.brand || data.model) {
+                        return { success: true, data };
+                    }
+                }
+                console.warn(`⚠️ Request successful but content invalid (Proxy might be blocking or redirecting)`);
+            }
+            return { success: false, status: response.status };
+        } catch (e) {
+            clearTimeout(timeout);
+            console.error(`❌ Fetch failed (${proxyUrl ? 'Proxy' : 'Direct'}):`, e.message);
+            return { success: false, error: e.message };
+        }
+    }
+
+    try {
+        // 1. Try working cache first if it exists
+        if (workingProxy) {
+            const result = await attemptFetch(workingProxy);
+            if (result.success) {
+                return res.json({ success: true, data: result.data, kno, usedProxy: workingProxy });
+            }
+            console.log("Working proxy failed, clearing cache and retrying...");
+            workingProxy = null;
         }
 
-        // Mode 3: Direct (Default)
-        const response = await fetch(url, { headers });
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
-        const html = await response.text();
-        const data = parseHtmlTable(html);
-        res.json({ success: true, data, kno });
+        // 2. Try Manual Proxy if configured
+        if (process.env.QR_PROXY_URL && process.env.QR_PROXY_URL !== 'AUTO') {
+            const result = await attemptFetch(process.env.QR_PROXY_URL);
+            if (result.success) return res.json({ ...result, kno });
+        }
+
+        // 3. Try Direct Fetch
+        const directResult = await attemptFetch();
+        if (directResult.success) {
+            return res.json({ success: true, data: directResult.data, kno });
+        }
+
+        // 4. Try Automatic Proxy Fallback
+        console.log("🔄 Direct fetch failed or restricted. Attempting automatic proxy fallback...");
+        const proxies = await getTurkishProxies();
+
+        // Try up to 10 proxies from the list
+        for (let i = 0; i < Math.min(proxies.length, 10); i++) {
+            const proxyUrl = proxies[i];
+            const result = await attemptFetch(proxyUrl);
+
+            if (result.success) {
+                workingProxy = proxyUrl; // Cache for next time
+                return res.json({ success: true, data: result.data, kno, usedProxy: proxyUrl });
+            }
+        }
+
+        throw new Error('Tüm bağlantı yöntemleri başarısız oldu. Lütfen manuel proxy kullanın veya daha sonra deneyin.');
 
     } catch (error) {
-        console.error('Error fetching device data:', error);
+        console.error('Final Error fetching device data:', error);
         res.status(500).json({ success: false, error: 'Veri çekilemedi: ' + error.message });
     }
 });

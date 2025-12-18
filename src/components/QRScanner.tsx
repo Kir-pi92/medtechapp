@@ -22,6 +22,7 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [scannedUrl, setScannedUrl] = useState<string | null>(null);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +114,16 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
     const fetchAndParseData = async (url: string) => {
         setIsLoading(true);
         setError(null);
+        setStatusMessage(t('fetchingDeviceData'));
+
+        // Timer to update status message for better UX
+        const statusTimer = setTimeout(() => {
+            setStatusMessage(t('searchingTurkeyProxy'));
+        }, 3000);
+
+        const statusTimer2 = setTimeout(() => {
+            setStatusMessage(t('proxyAttemptInProgress'));
+        }, 8000);
 
         try {
             // Extract kno from URL
@@ -128,6 +139,9 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
 
             const response = await fetch(proxyUrl);
             const result = await response.json();
+
+            clearTimeout(statusTimer);
+            clearTimeout(statusTimer2);
 
             if (!result.success) {
                 throw new Error(result.error || 'Failed to fetch data');
@@ -150,11 +164,15 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
             onDataExtracted(extractedData);
             setIsLoading(false);
             setScannedUrl(null);
+            setStatusMessage(null);
 
-        } catch (err) {
+        } catch (err: any) {
+            clearTimeout(statusTimer);
+            clearTimeout(statusTimer2);
             console.error('Fetch error:', err);
-            setError(t('fetchError'));
+            setError(err.message || t('fetchError'));
             setIsLoading(false);
+            setStatusMessage(null);
         }
     };
 
@@ -232,9 +250,12 @@ export function QRScanner({ onDataExtracted }: QRScannerProps) {
 
             {/* Loading State */}
             {isLoading && (
-                <div className="flex items-center justify-center gap-3 py-8 bg-white rounded-lg border border-violet-200">
-                    <Loader2 className="w-5 h-5 animate-spin text-violet-600" />
-                    <span className="text-violet-700">{t('fetchingDeviceData')}</span>
+                <div className="flex items-center justify-center flex-col gap-3 py-8 bg-white rounded-lg border border-violet-200">
+                    <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+                    <div className="text-center">
+                        <p className="text-violet-700 font-medium">{statusMessage}</p>
+                        <p className="text-violet-400 text-xs mt-1 italic print:hidden">Bakanlık veritabanına erişiliyor...</p>
+                    </div>
                 </div>
             )}
 
